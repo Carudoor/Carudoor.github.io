@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이용수</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-card: #171a21;
+    --text: #eef0f4;
+    --muted: #9aa2b1;
+    --accent: #5b8def;
+    --border: #262b36;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 80px 24px 40px;
+  }
+
+  header h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  header p.tagline {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+
+  nav {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 24px;
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    padding-bottom: 12px;
+  }
+
+  nav a:hover {
+    color: var(--text);
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px 100px;
+  }
+
+  section {
+    margin-bottom: 48px;
+  }
+
+  section h2 {
+    font-size: 1.1rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 16px;
+  }
+
+  .about p {
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+
+  .edu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .edu-item .school {
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
+  .edu-item .major {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .edu-item .period {
+    color: var(--muted);
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  .contact-list {
+    list-style: none;
+  }
+
+  .contact-list li {
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .contact-list a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .contact-list a:hover {
+    color: var(--accent);
+  }
+
+  footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>이용수</h1>
+  <p class="tagline">개인 홈페이지에 오신 것을 환영합니다.</p>
+</header>
+
+<nav>
+  <a href="#about">소개</a>
+  <a href="#education">학력사항</a>
+  <a href="#contact">연락처</a>
+</nav>
+
+<main>
+  <section id="about" class="about">
+    <h2>소개</h2>
+    <p>안녕하세요, 이용수입니다. 이곳은 저를 소개하는 개인 홈페이지입니다.</p>
+  </section>
+
+  <section id="education">
+    <h2>학력사항</h2>
+    <div class="card">
+      <div class="edu-item">
+        <div>
+          <div class="school">단국대학교</div>
+          <div class="major">도시계획학과</div>
+        </div>
+        <div class="period"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <h2>연락처</h2>
+    <ul class="contact-list">
+      <li>Email: <a href="mailto:yongsoo.b.lee@gmail.com">yongsoo.b.lee@gmail.com</a></li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  &copy; 2026 이용수. All rights reserved.
+</footer>
+
+</body>
+</html>

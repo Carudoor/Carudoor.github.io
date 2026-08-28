@@ -41,7 +41,10 @@
   }
   #vignette{
     position:fixed;inset:0;pointer-events:none;z-index:6;
-    box-shadow: inset 0 0 18vw 4vw rgba(0,4,8,0.85);
+    /* radial-gradient instead of a blurred inset box-shadow: a live blur
+       recomputed every frame over the WebGL canvas is one of the main
+       causes of low FPS in Firefox; a gradient paints once and composites cheaply. */
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,4,8,0.85) 100%);
   }
   #noise{
     position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0.05;
@@ -98,12 +101,15 @@
   .btn{
     pointer-events:all;cursor:pointer;
     font-family:var(--font-ui);font-size:10px;letter-spacing:0.08em;
-    color:var(--cyan);background:rgba(10,30,36,0.5);
+    color:var(--cyan);
+    /* solid-ish background instead of backdrop-filter:blur() — a live
+       blur sampled from the WebGL canvas behind every frame is very
+       expensive in Firefox specifically and was the main FPS drain */
+    background:rgba(6,20,24,0.78);
     border:1px solid var(--cyan-dim);
     padding:8px 14px;text-transform:uppercase;
     transition:all .15s ease;
     min-width:150px;text-align:center;
-    backdrop-filter:blur(2px);
     text-decoration:none;
     display:inline-block;
   }
@@ -186,9 +192,8 @@
     position:fixed;top:32px;right:340px;z-index:16;pointer-events:all;
     width:34px;height:34px;
     display:flex;align-items:center;justify-content:center;
-    border:1px solid var(--cyan-dim);background:rgba(10,30,36,0.5);
+    border:1px solid var(--cyan-dim);background:rgba(6,20,24,0.78);
     cursor:pointer;transition:all .2s ease;
-    backdrop-filter:blur(2px);
   }
   #dashToggle:hover{border-color:var(--cyan);box-shadow:0 0 12px rgba(75,240,255,0.25);}
   #dashToggle svg{width:16px;height:16px;}
@@ -464,8 +469,11 @@ scene.fog = new THREE.FogExp2(0x01050a, 0.018);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 5000);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Firefox's WebGL MSAA path is noticeably heavier than Chromium's, and
+// rendering at full devicePixelRatio compounds it — cap harder there.
+const isFirefox = /firefox/i.test(navigator.userAgent);
+const renderer = new THREE.WebGLRenderer({ antialias: !isFirefox, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isFirefox ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x01050a, 1);
 stage.appendChild(renderer.domElement);

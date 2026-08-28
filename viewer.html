@@ -338,8 +338,10 @@
   </div>
 
   <div class="hud" id="stats">
+    <div class="row"><span>FPS</span><span class="val" id="statFps">—</span></div>
     <div class="row"><span>TRIANGLES</span><span class="val" id="statTris">—</span></div>
     <div class="row"><span>VERTICES</span><span class="val" id="statVerts">—</span></div>
+    <div class="row"><span>EDGE SEGS</span><span class="val" id="statEdges">—</span></div>
     <div class="row"><span>RENDER</span><span class="val" id="statMode">SOLID + EDGE</span></div>
     <div class="row"><span>STATUS</span><span class="val">LOCKED</span></div>
   </div>
@@ -574,8 +576,10 @@ function buildModel(geometry, displayName) {
   });
 
   const triCount = geometry.attributes.position.count / 3;
+  const edgeSegCount = edgeGeo.attributes.position.count / 2;
   document.getElementById('statTris').textContent = triCount.toLocaleString();
   document.getElementById('statVerts').textContent = geometry.attributes.position.count.toLocaleString();
+  document.getElementById('statEdges').textContent = edgeSegCount.toLocaleString();
   document.getElementById('modelName').textContent = displayName || 'UNTITLED MODEL';
   document.getElementById('modelSub').textContent = 'Mesh reconstructed from CAD source (STL) · ' + triCount.toLocaleString() + ' faces';
 
@@ -726,6 +730,9 @@ window.addEventListener('keydown', (e) => {
 // Render loop
 // ---------------------------------------------------------------
 const clock = new THREE.Clock();
+const statFps = document.getElementById('statFps');
+let fpsFrames = 0, fpsWindowStart = performance.now();
+
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
@@ -742,6 +749,14 @@ function animate() {
   }
 
   renderer.render(scene, camera);
+
+  fpsFrames++;
+  const now = performance.now();
+  if (now - fpsWindowStart >= 500) {
+    statFps.textContent = Math.round((fpsFrames * 1000) / (now - fpsWindowStart));
+    fpsFrames = 0;
+    fpsWindowStart = now;
+  }
 }
 animate();
 

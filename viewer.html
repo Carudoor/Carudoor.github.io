@@ -51,6 +51,13 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
     mix-blend-mode:overlay;
   }
+  /* mix-blend-mode forces the compositor to re-sample the full-viewport
+     WebGL canvas behind #scan/#noise every frame — cost scales with
+     window area, and Firefox's blend-mode compositing path is slower
+     than Chromium's. On Firefox we drop the blend mode (JS adds this
+     class) and fall back to a plain low-opacity overlay instead. */
+  body.ff-lite #scan{ mix-blend-mode:normal; opacity:0.5; }
+  body.ff-lite #noise{ display:none; }
 
   /* HUD */
   .hud{position:fixed;z-index:10;pointer-events:none;letter-spacing:0.06em;}
@@ -474,6 +481,7 @@ const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerH
 // Firefox's WebGL MSAA path is noticeably heavier than Chromium's, and
 // rendering at full devicePixelRatio compounds it — cap harder there.
 const isFirefox = /firefox/i.test(navigator.userAgent);
+if (isFirefox) document.body.classList.add('ff-lite');
 const renderer = new THREE.WebGLRenderer({ antialias: !isFirefox, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isFirefox ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -552,7 +560,12 @@ function buildModel(geometry, displayName) {
     shininess: 90,
     transparent: true,
     opacity: 0.82,
-    side: THREE.DoubleSide,
+    // FrontSide instead of DoubleSide: for a closed STL solid, DoubleSide
+    // shades and blends every triangle twice (front + back face), which is
+    // pure per-pixel fill-rate cost — exactly why FPS was scaling with
+    // window/canvas size. STL normals are outward-facing on virtually all
+    // real files, so FrontSide alone renders correctly.
+    side: THREE.FrontSide,
     flatShading: false
   });
   solidMesh = new THREE.Mesh(geometry, solidMat);

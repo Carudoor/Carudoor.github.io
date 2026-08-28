@@ -302,8 +302,7 @@
     <h2 id="infoTitle">모델을 찾을 수 없습니다</h2>
     <p id="infoText">
       저장소의 <code>stl/</code> 폴더에 STL 파일을 추가하고<br>
-      <code>stl/manifest.json</code>에 파일명을 등록한 뒤 push하면<br>
-      여기에 자동으로 표시됩니다.
+      push하면 여기에 자동으로 표시됩니다.
     </p>
     <div class="filetypes">지원 형식: .STL (BINARY / ASCII)</div>
     <div class="btn" id="infoRetryBtn">다시 불러오기</div>
@@ -744,8 +743,9 @@ window.addEventListener('resize', () => {
 });
 
 // ---------------------------------------------------------------
-// Library intake: fetch manifest + STL files from the repo's stl/ folder
-// (no local file picking — models come from the repo, not the visitor's disk)
+// Library intake: list STL files straight from the repo's stl/ folder
+// via the GitHub API — no manifest file to maintain, no local file
+// picking. Drop a .stl into stl/ and push; it just shows up here.
 // ---------------------------------------------------------------
 const loading = document.getElementById('loading');
 const loadingTxt = document.getElementById('loadingTxt');
@@ -756,8 +756,10 @@ const infoText = document.getElementById('infoText');
 const dashList = document.getElementById('dashList');
 const dashCount = document.getElementById('dashCount');
 
-const STL_DIR = 'stl/';
-const MANIFEST_URL = STL_DIR + 'manifest.json';
+const REPO_OWNER = 'Carudoor';
+const REPO_NAME = 'carudoor.github.io';
+const STL_DIR = 'stl';
+const CONTENTS_API = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + STL_DIR;
 
 let library = [];       // [{ name, path, size }]
 let activeIndex = -1;
@@ -778,52 +780,54 @@ function showInfo(title, text) {
   infoText.innerHTML = text;
 }
 
-function normalizeManifestEntry(entry) {
-  if (typeof entry === 'string') return { file: entry, name: null };
-  if (entry && typeof entry === 'object' && typeof entry.file === 'string') {
-    return { file: entry.file, name: entry.name || null };
-  }
-  return null;
-}
-
 async function loadLibrary() {
   showLoading('MODEL LIBRARY 불러오는 중');
   bufferCache.clear();
 
-  let manifest;
+  let items;
   try {
-    const res = await fetch(MANIFEST_URL, { cache: 'no-store' });
+    const res = await fetch(CONTENTS_API, {
+      headers: { 'Accept': 'application/vnd.github+json' },
+      cache: 'no-store'
+    });
+    if (res.status === 403 || res.status === 429) throw new Error('RATE_LIMIT');
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    manifest = await res.json();
-    if (!Array.isArray(manifest)) throw new Error('manifest.json은 배열(array) 형식이어야 합니다.');
+    items = await res.json();
+    if (!Array.isArray(items)) throw new Error('unexpected response shape');
   } catch (err) {
     console.error(err);
-    showInfo(
-      'manifest.json을 불러올 수 없습니다',
-      '이 페이지를 <code>file://</code>로 직접 열면 fetch가 차단됩니다.<br>' +
-      'GitHub Pages(https://carudoor.github.io)에서 열거나<br>' +
-      '로컬 서버(예: <code>python -m http.server</code>)로 실행해주세요.'
-    );
+    if (err.message === 'RATE_LIMIT') {
+      showInfo(
+        '잠시 후 다시 시도해주세요',
+        'GitHub API 요청 한도를 일시적으로 초과했습니다.<br>몇 분 후 새로고침하면 다시 표시됩니다.'
+      );
+    } else {
+      showInfo(
+        '모델 목록을 불러올 수 없습니다',
+        '이 페이지를 <code>file://</code>로 직접 열면 접근이 차단됩니다.<br>' +
+        'GitHub Pages(https://carudoor.github.io)에서 열어주세요.'
+      );
+    }
     return;
   }
 
-  const entries = manifest.map(normalizeManifestEntry).filter(Boolean)
-    .filter(e => e.file.toLowerCase().endsWith('.stl'));
+  const entries = items.filter(it => it.type === 'file' && /\.stl$/i.test(it.name));
 
   if (entries.length === 0) {
     showInfo(
       '모델을 찾을 수 없습니다',
-      '저장소의 <code>stl/</code> 폴더에 STL 파일을 추가하고<br>' +
-      '<code>stl/manifest.json</code>에 파일명을 등록한 뒤 push하면<br>' +
+      '저장소의 <code>stl/</code> 폴더에 STL 파일을 추가하고 push하면<br>' +
       '여기에 자동으로 표시됩니다.'
     );
     return;
   }
 
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+
   library = entries.map(e => ({
-    name: e.name || e.file.replace(/\.stl$/i, '').replace(/[_\-]+/g, ' ').toUpperCase(),
-    path: STL_DIR + e.file,
-    size: null
+    name: e.name.replace(/\.stl$/i, '').replace(/[_\-]+/g, ' ').toUpperCase(),
+    path: e.download_url,
+    size: typeof e.size === 'number' ? e.size : null
   }));
 
   renderDashboard();

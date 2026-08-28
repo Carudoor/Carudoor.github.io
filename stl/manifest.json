@@ -1,1 +1,4 @@
-[]
+[
+  { "file": "test-cube.stl", "name": "TEST CUBE" },
+  { "file": "wwii-japanese-dagger-2020.stl", "name": "WWII Japanese Dagger (2020)" }
+]

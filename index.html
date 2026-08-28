@@ -134,6 +134,22 @@
     color: var(--accent);
   }
 
+  .btn-link {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 16px;
+  }
+
+  .btn-link:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
   footer {
     max-width: 720px;
     margin: 0 auto;
@@ -154,6 +170,7 @@
 <nav>
   <a href="#about">소개</a>
   <a href="#education">학력사항</a>
+  <a href="#models">3D 모델</a>
   <a href="#contact">연락처</a>
 </nav>
 
@@ -173,6 +190,14 @@
         </div>
         <div class="period"></div>
       </div>
+    </div>
+  </section>
+
+  <section id="models">
+    <h2>3D 모델</h2>
+    <div class="card">
+      <p style="margin-bottom: 14px;">STL 3D 모델을 홀로그램 스타일로 볼 수 있는 뷰어입니다.</p>
+      <a href="viewer.html" class="btn-link">뷰어 열기 →</a>
     </div>
   </section>
 

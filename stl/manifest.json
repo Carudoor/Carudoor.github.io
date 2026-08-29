@@ -5,5 +5,6 @@
   "teil_2.stl",
   "teil_3.stl",
   "teil_4.stl",
-  "innen.stl"
+  "innen.stl",
+  { "file": "small-city.stl", "name": "Small City" }
 ]

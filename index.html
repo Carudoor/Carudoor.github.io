@@ -340,7 +340,6 @@
   var isDragging = false;
   var lastX = 0, lastY = 0;
   var autoRotate = true;
-  var resumeTimer = null;
 
   function updateCameraFromSpherical() {
     var r = spherical.radius, t = spherical.theta, p = spherical.phi;
@@ -351,10 +350,10 @@
   }
   updateCameraFromSpherical();
 
+  // Once a visitor interacts, auto-rotate stops for good (no resume timer) —
+  // it was fighting the visitor's own framing.
   function pauseAutoRotate() {
     autoRotate = false;
-    clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(function () { autoRotate = true; }, 2500);
   }
 
   var canvasEl = renderer.domElement;

@@ -165,6 +165,12 @@
     display: block;
     width: 100%;
     height: 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .model-preview canvas:active {
+    cursor: grabbing;
   }
 
   .model-preview-status {
@@ -175,6 +181,16 @@
     justify-content: center;
     color: var(--muted);
     font-size: 0.85rem;
+    pointer-events: none;
+  }
+
+  .model-preview-hint {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    opacity: 0.75;
     pointer-events: none;
   }
 
@@ -226,6 +242,7 @@
     <div class="card">
       <div class="model-preview" id="modelPreview">
         <div class="model-preview-status" id="modelPreviewStatus">모델 불러오는 중…</div>
+        <div class="model-preview-hint" id="modelPreviewHint">드래그 · 회전 &nbsp;/&nbsp; 스크롤 · 확대</div>
       </div>
       <p style="margin-bottom: 14px;">STL 3D 모델을 홀로그램 스타일로 볼 수 있는 뷰어입니다.</p>
       <a href="viewer.html" class="btn-link">전체 뷰어 열기 →</a>
@@ -305,9 +322,6 @@
       );
       modelGroup.add(edges);
 
-      camera.position.set(4, 3.2, 5);
-      camera.lookAt(0, 0, 0);
-
       statusEl.style.display = 'none';
       animate();
     })
@@ -316,9 +330,100 @@
       statusEl.textContent = '모델을 불러올 수 없습니다.';
     });
 
+  // ---------------------------------------------------------------
+  // Orbit / zoom controls — drag to rotate view, scroll/pinch to zoom.
+  // Camera orbits a fixed target on a sphere; auto-rotate pauses while
+  // the visitor is interacting and resumes shortly after they let go.
+  // ---------------------------------------------------------------
+  var spherical = { radius: 7, theta: 0.6, phi: 1.15 };
+  var target = new THREE.Vector3(0, 0.3, 0);
+  var isDragging = false;
+  var lastX = 0, lastY = 0;
+  var autoRotate = true;
+  var resumeTimer = null;
+
+  function updateCameraFromSpherical() {
+    var r = spherical.radius, t = spherical.theta, p = spherical.phi;
+    camera.position.x = target.x + r * Math.sin(p) * Math.sin(t);
+    camera.position.y = target.y + r * Math.cos(p);
+    camera.position.z = target.z + r * Math.sin(p) * Math.cos(t);
+    camera.lookAt(target);
+  }
+  updateCameraFromSpherical();
+
+  function pauseAutoRotate() {
+    autoRotate = false;
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(function () { autoRotate = true; }, 2500);
+  }
+
+  var canvasEl = renderer.domElement;
+
+  canvasEl.addEventListener('mousedown', function (e) {
+    isDragging = true;
+    lastX = e.clientX; lastY = e.clientY;
+    pauseAutoRotate();
+  });
+  window.addEventListener('mouseup', function () { isDragging = false; });
+  window.addEventListener('mousemove', function (e) {
+    if (!isDragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    spherical.theta -= dx * 0.008;
+    spherical.phi -= dy * 0.008;
+    spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi));
+    updateCameraFromSpherical();
+  });
+
+  canvasEl.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    pauseAutoRotate();
+    spherical.radius *= (1 + e.deltaY * 0.001);
+    spherical.radius = Math.max(2, Math.min(20, spherical.radius));
+    updateCameraFromSpherical();
+  }, { passive: false });
+
+  var touchLastX = 0, touchLastY = 0, touchStartDist = null;
+  canvasEl.addEventListener('touchstart', function (e) {
+    pauseAutoRotate();
+    if (e.touches.length === 1) {
+      touchLastX = e.touches[0].clientX;
+      touchLastY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStartDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, { passive: true });
+
+  canvasEl.addEventListener('touchmove', function (e) {
+    if (e.touches.length === 1) {
+      var dx = e.touches[0].clientX - touchLastX;
+      var dy = e.touches[0].clientY - touchLastY;
+      touchLastX = e.touches[0].clientX;
+      touchLastY = e.touches[0].clientY;
+      spherical.theta -= dx * 0.009;
+      spherical.phi -= dy * 0.009;
+      spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi));
+      updateCameraFromSpherical();
+    } else if (e.touches.length === 2 && touchStartDist !== null) {
+      var ddx = e.touches[0].clientX - e.touches[1].clientX;
+      var ddy = e.touches[0].clientY - e.touches[1].clientY;
+      var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+      var delta = dist - touchStartDist;
+      touchStartDist = dist;
+      spherical.radius *= (1 - delta * 0.006);
+      spherical.radius = Math.max(2, Math.min(20, spherical.radius));
+      updateCameraFromSpherical();
+    }
+  }, { passive: true });
+
   function animate() {
     requestAnimationFrame(animate);
-    modelGroup.rotation.y += 0.006;
+    if (autoRotate && !isDragging) {
+      spherical.theta += 0.0025;
+      updateCameraFromSpherical();
+    }
     renderer.render(scene, camera);
   }
 

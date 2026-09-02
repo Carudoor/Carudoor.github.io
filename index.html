@@ -135,7 +135,8 @@
     opacity: 1;
   }
 
-  #mm-content {
+  #mm-content,
+  .mm-content-fallback {
     width: 100%;
     max-width: 680px;
     margin-top: 2.5rem;
@@ -286,7 +287,7 @@
 <!-- 마인드맵과 본문은 스크립트로 생성되므로, JS가 꺼진 환경에서도
      핵심 정보는 읽을 수 있도록 최소한의 대체 내용을 둔다. -->
 <noscript>
-  <div id="mm-content">
+  <div class="mm-content-fallback">
     <section class="mm-section">
       <h3 class="mm-section-header">소개</h3>
       <div class="mm-section-body">안녕하세요, 이용수입니다. 이곳은 저를 소개하는 개인 홈페이지입니다.</div>

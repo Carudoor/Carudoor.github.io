@@ -609,7 +609,10 @@
     var branch = pointOf(branchDots[i]);
     var leaf = pointOf(leafCircles[i][j]);
     var headerRect = headerEls[i][j].getBoundingClientRect();
-    var spineX = parseFloat(spineDots[i][j].getAttribute('cx'));
+    // spineDots[i][j]의 cx는 layoutLeaderLines()가 실행된 뒤에야 채워지므로
+    // (rAF로 예약됨) 그 값에 기대지 않고 스파인 x좌표를 여기서 직접 계산한다.
+    var firstHeaderRect = headerEls[0][0].getBoundingClientRect();
+    var spineX = Math.max(4, firstHeaderRect.left - 12 + window.pageXOffset);
     var headerPt = [spineX, headerRect.top + headerRect.height / 2 + window.pageYOffset];
     var bendPt = [spineX, Math.min(leaf[1] + 50, headerPt[1])];
     return [

@@ -134,6 +134,20 @@
     stroke: var(--mm-accent);
     stroke-width: 2;
   }
+  /* 클릭할 때마다 새로 만들어지는 강조선. stroke-dashoffset을 통해 실제로
+     "그어지는" 움직임을 준다 — 세부 항목 클릭 시 중심→헤더 방향, 헤더 클릭
+     시 헤더→중심 방향으로 draw 순서만 반대로 뒤집는다. */
+  .mm-trace {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0;
+    transition: stroke-dashoffset 0.5s ease, opacity 0.2s ease;
+  }
+  .mm-trace.mm-trace-visible {
+    opacity: 1;
+  }
 
   #mm-content {
     width: 100%;
@@ -543,7 +557,7 @@
 
   // 중심 노드
   var rootG = el('g', {}, nodesLayer);
-  el('circle', { cx: cx, cy: Y0, r: centralR, fill: 'var(--mm-root-fill)' }, rootG);
+  var rootCircle = el('circle', { cx: cx, cy: Y0, r: centralR, fill: 'var(--mm-root-fill)' }, rootG);
   el('text', { class: 'mm-label-root', x: cx, y: Y0, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, rootG, data.label);
 
   var branchPaths = [], branchDots = [], branchLabelEls = [];
@@ -553,6 +567,9 @@
   var contentContainer = document.getElementById('mm-content');
   var overlay = document.getElementById('mm-leader-overlay');
   var spineLine = el('path', { class: 'mm-spine' }, overlay);
+  // 클릭할 때마다 새로 그려지는 강조선(중심 ↔ 헤더). 미리 그려두지 않고,
+  // 클릭 시 방향에 맞춰 경로를 만든 뒤 stroke-dashoffset으로 "그어지는" 애니메이션을 준다.
+  var traceEl = el('path', { class: 'mm-trace' }, overlay);
 
   var currentOrder = [];
   for (var oi = 0; oi < n; oi++) currentOrder.push(oi);
@@ -565,26 +582,76 @@
     childOrders.push(co);
   }
 
-  var activeHighlight = null;
+  var activeHighlight = false;
   var activeBranchIndex = null;
+  var activeSpineDot = null;
 
   function clearHighlight() {
     if (!activeHighlight) return;
-    activeHighlight.forEach(function (p) { p.classList.remove('mm-path-highlight'); });
-    activeHighlight = null;
+    traceEl.classList.remove('mm-trace-visible');
+    if (activeSpineDot) activeSpineDot.classList.remove('mm-path-highlight');
+    activeSpineDot = null;
+    activeHighlight = false;
     activeBranchIndex = null;
   }
 
-  function highlightPath(i, j) {
-    clearHighlight();
-    var els = [branchPaths[i]];
-    if (typeof j === 'number') {
-      els.push(childPaths[i][j]);
-      if (leaderPaths[i] && leaderPaths[i][j]) els.push(leaderPaths[i][j]);
-      if (spineDots[i] && spineDots[i][j]) els.push(spineDots[i][j]);
+  // 화면에 실제로 그려진 위치(getBoundingClientRect)를 기준으로 점을 구한다.
+  // 메인 svg(뷰박스 좌표)와 오버레이 svg(페이지 픽셀 좌표)가 서로 다른 좌표계라,
+  // 강조선은 오버레이 위에 페이지 좌표로 통일해서 그린다.
+  function pointOf(target) {
+    var r = target.getBoundingClientRect();
+    return [r.left + r.width / 2 + window.pageXOffset, r.top + r.height / 2 + window.pageYOffset];
+  }
+
+  // 중심 → 브랜치 → 세부 항목 → 스파인 → 헤더를 잇는 하나의 연속된 경로(꺾은선)를 만든다.
+  function buildTracePoints(i, j) {
+    var root = pointOf(rootCircle);
+    var branch = pointOf(branchDots[i]);
+    var leaf = pointOf(leafCircles[i][j]);
+    var headerRect = headerEls[i][j].getBoundingClientRect();
+    var spineX = parseFloat(spineDots[i][j].getAttribute('cx'));
+    var headerPt = [spineX, headerRect.top + headerRect.height / 2 + window.pageYOffset];
+    var bendPt = [spineX, Math.min(leaf[1] + 50, headerPt[1])];
+    return [
+      root,
+      [branch[0], root[1] + (branch[1] - root[1]) * 0.35],
+      branch,
+      [leaf[0], branch[1] + (leaf[1] - branch[1]) * 0.35],
+      leaf,
+      bendPt,
+      headerPt
+    ];
+  }
+
+  // direction: 'down' — 중심에서 헤더 쪽으로(세부 항목 클릭) / 'up' — 헤더에서 중심 쪽으로(헤더 클릭)
+  function highlightPath(i, j, direction) {
+    var pts = buildTracePoints(i, j);
+    if (direction === 'up') pts = pts.slice().reverse();
+
+    var d = 'M ' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L ');
+    traceEl.setAttribute('d', d);
+    traceEl.setAttribute('stroke', data.children[i].color);
+
+    if (prefersReduced) {
+      traceEl.style.transition = 'none';
+      traceEl.style.strokeDasharray = 'none';
+      traceEl.style.strokeDashoffset = 0;
+    } else {
+      var len = traceEl.getTotalLength();
+      traceEl.style.transition = 'none';
+      traceEl.style.strokeDasharray = len;
+      traceEl.style.strokeDashoffset = len;
+      void traceEl.getBoundingClientRect(); // 강제 리플로우: 아래 transition이 실제로 애니메이션되도록
+      traceEl.style.transition = '';
+      traceEl.style.strokeDashoffset = 0;
     }
-    els.forEach(function (p) { p.classList.add('mm-path-highlight'); });
-    activeHighlight = els;
+    traceEl.classList.add('mm-trace-visible');
+
+    if (spineDots[i] && spineDots[i][j]) {
+      spineDots[i][j].classList.add('mm-path-highlight');
+      activeSpineDot = spineDots[i][j];
+    }
+    activeHighlight = true;
     activeBranchIndex = i;
   }
 
@@ -604,10 +671,10 @@
   function goToContent(i, j) {
     var needsMove = currentOrder.indexOf(i) !== 0 || childOrders[i].indexOf(j) !== 0;
     clearHighlightThen(needsMove, function () {
-      // 회전과 스크롤을 동시에 진행하고, 회전이 끝나면 선을 그린다.
+      // 회전과 스크롤을 동시에 진행하고, 회전이 끝나면 중심에서 헤더 방향으로 선을 그린다.
       var target = document.getElementById('content-' + i + '-' + j);
       if (target) scrollElementToCenter(target);
-      moveToLeftmost(i, j, function () { highlightPath(i, j); });
+      moveToLeftmost(i, j, function () { highlightPath(i, j, 'down'); });
     });
   }
 
@@ -619,7 +686,7 @@
     var needsMove = currentOrder.indexOf(i) !== 0 || childOrders[i].indexOf(j) !== 0;
     clearHighlightThen(needsMove, function () {
       scrollElementToTop(document.getElementById('mindmap-root'));
-      moveToLeftmost(i, j, function () { highlightPath(i, j); });
+      moveToLeftmost(i, j, function () { highlightPath(i, j, 'up'); });
     });
   }
 

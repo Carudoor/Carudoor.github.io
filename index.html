@@ -6,12 +6,12 @@
 <title>이용수</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --bg-card: #171a21;
-    --text: #eef0f4;
-    --muted: #9aa2b1;
-    --accent: #5b8def;
-    --border: #262b36;
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --border: #e5e7eb;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,6 +89,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 20px 22px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
   .edu-item {
@@ -147,7 +148,7 @@
 
   .btn-link:hover {
     background: var(--accent);
-    color: var(--bg);
+    color: #ffffff;
   }
 
   .model-preview {
@@ -179,7 +180,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--muted);
+    /* fixed light color, not var(--muted) — this box stays dark
+       regardless of the page's light/dark theme */
+    color: rgba(255, 255, 255, 0.55);
     font-size: 0.85rem;
     pointer-events: none;
   }
@@ -189,8 +192,7 @@
     right: 10px;
     bottom: 8px;
     font-size: 0.7rem;
-    color: var(--muted);
-    opacity: 0.75;
+    color: rgba(255, 255, 255, 0.55);
     pointer-events: none;
   }
 
@@ -215,6 +217,7 @@
   <a href="#about">소개</a>
   <a href="#education">학력사항</a>
   <a href="#models">3D 모델</a>
+  <a href="#mindmap">마인드맵</a>
   <a href="#contact">연락처</a>
 </nav>
 
@@ -246,6 +249,14 @@
       </div>
       <p style="margin-bottom: 14px;">STL 3D 모델을 홀로그램 스타일로 볼 수 있는 뷰어입니다.</p>
       <a href="viewer.html" class="btn-link">전체 뷰어 열기 →</a>
+    </div>
+  </section>
+
+  <section id="mindmap">
+    <h2>마인드맵</h2>
+    <div class="card">
+      <p style="margin-bottom: 14px;">중심 주제에서 브랜치로 뻗어나가는 인터랙티브 마인드맵입니다. 항목을 클릭하면 관련 내용으로 이동합니다.</p>
+      <a href="mindmap.html" class="btn-link">마인드맵 열기 →</a>
     </div>
   </section>
 

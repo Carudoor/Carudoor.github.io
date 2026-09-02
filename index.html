@@ -848,15 +848,21 @@
 
   // 모든 좌표는 실제 렌더링된 픽셀 위치를 기준으로 계산한다 (반응형 대응)
   function layoutLeaderLines() {
-    var docW = document.documentElement.scrollWidth;
-    var docH = document.documentElement.scrollHeight;
+    // Measured from the footer's own position, not document.documentElement.
+    // scrollHeight/scrollWidth — those include the overlay's own previous
+    // size (it's position:absolute over the whole page), so sizing from
+    // them would let one inflated reading ratchet the overlay (and the
+    // page) taller forever with no way back down.
+    var scrollX = window.pageXOffset;
+    var scrollY = window.pageYOffset;
+
+    var footerRect = document.querySelector('footer').getBoundingClientRect();
+    var docW = Math.max(document.documentElement.clientWidth, footerRect.right + scrollX);
+    var docH = footerRect.bottom + scrollY;
     overlay.setAttribute('width', docW);
     overlay.setAttribute('height', docH);
     overlay.style.width = docW + 'px';
     overlay.style.height = docH + 'px';
-
-    var scrollX = window.pageXOffset;
-    var scrollY = window.pageYOffset;
 
     var firstHeaderRect = headerEls[0][0].getBoundingClientRect();
     var spineX = Math.max(4, firstHeaderRect.left - 12 + scrollX);

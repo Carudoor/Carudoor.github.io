@@ -538,13 +538,23 @@
       renderer.render(scene, camera);
     }
 
-    window.addEventListener('resize', function () {
+    // 컨테이너 크기가 0인 상태(백그라운드 탭, 아직 레이아웃 전 등)에서 초기화되면
+    // 캔버스가 0px로 굳어버린다. window 리사이즈만 듣고 있으면 나중에 컨테이너가
+    // 실제 크기를 얻어도 복구되지 않으므로, 컨테이너 자체를 관찰한다.
+    var lastW = 0, lastH = 0;
+    function resizeToContainer() {
       var w = container.clientWidth, h = container.clientHeight;
-      if (!w || !h) return;
+      if (!w || !h || (w === lastW && h === lastH)) return;
+      lastW = w; lastH = h;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
-    });
+    }
+
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(resizeToContainer).observe(container);
+    }
+    window.addEventListener('resize', resizeToContainer);
   }
 
   // 모바일 스크롤을 고려해 트리는 항상 아래로만 자란다: 중심 → 브랜치 행 → 세부 브랜치 행

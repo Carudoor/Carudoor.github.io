@@ -77,3 +77,21 @@ function parseSTL(arrayBuffer) {
   if (isLikelyASCII(arrayBuffer)) return parseASCIISTL(arrayBuffer);
   return parseBinarySTL(arrayBuffer);
 }
+
+// STL은 원점도 축척도 제각각이라, 화면에 올리기 전에 두 뷰어 모두 같은 처리를 한다:
+// 바운딩 박스 중심을 원점으로 옮기고, 가장 긴 변이 targetSize가 되는 배율을 구한다.
+// { scale, size } 반환 — size는 (스케일 적용 전) 원본 치수로, 바닥 그리드 배치 등에 쓴다.
+function fitGeometryToSize(geometry, targetSize) {
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  geometry.translate(-center.x, -center.y, -center.z);
+
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+  return { scale: targetSize / maxDim, size: size };
+}

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>이용수</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="stl-core.js"></script>
+<meta name="description" content="이용수 개인 홈페이지 — 단국대학교 도시계획학과, STL CAD 프로젝트와 3D 모델 뷰어.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%232c2c2a'/><circle cx='16' cy='16' r='5' fill='%232563eb'/></svg>">
 <style>
   :root {
     --mm-text: #1f2937;
@@ -82,10 +82,6 @@
   .mm-connector {
     transition: stroke 0.25s ease, stroke-width 0.25s ease;
   }
-  .mm-connector.mm-path-highlight {
-    stroke: var(--mm-accent);
-    stroke-width: 2.5;
-  }
   .mm-label-main {
     font-size: 15px;
     font-weight: 600;
@@ -124,16 +120,6 @@
     fill: var(--mm-accent) !important;
     r: 6;
   }
-  .mm-leader {
-    fill: none;
-    opacity: 0;
-    transition: opacity 0.25s ease, stroke 0.25s ease, stroke-width 0.25s ease;
-  }
-  .mm-leader.mm-path-highlight {
-    opacity: 1;
-    stroke: var(--mm-accent);
-    stroke-width: 2;
-  }
   /* 클릭할 때마다 새로 만들어지는 강조선. stroke-dashoffset을 통해 실제로
      "그어지는" 움직임을 준다 — 세부 항목 클릭 시 중심→헤더 방향, 헤더 클릭
      시 헤더→중심 방향으로 draw 순서만 반대로 뒤집는다. */
@@ -170,13 +156,23 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--mm-text);
-    cursor: pointer;
   }
-  .mm-section-header:hover,
-  .mm-section-header:focus-visible {
+  /* 헤더는 <h3>(제목 시맨틱 유지) 안의 <button>이 클릭 대상이다.
+     버튼의 기본 스타일만 지워 원래 제목처럼 보이게 한다. */
+  .mm-section-header-btn {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+  }
+  .mm-section-header-btn:hover,
+  .mm-section-header-btn:focus-visible {
     color: var(--mm-accent);
   }
-  .mm-section-header:focus-visible {
+  .mm-section-header-btn:focus-visible {
     outline: 2px solid var(--mm-accent);
     outline-offset: 3px;
   }
@@ -263,8 +259,16 @@
     text-align: center;
   }
 
+  /* 모션 최소화 설정에서는 JS(스크롤·회전·선 그리기)뿐 아니라
+     CSS 트랜지션도 함께 꺼서 실제로 움직임이 남지 않게 한다. */
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
+    .mm-children,
+    .mm-connector,
+    .mm-spine-dot,
+    .mm-trace {
+      transition: none !important;
+    }
   }
 </style>
 </head>
@@ -279,8 +283,41 @@
 <div class="mindmap" id="mindmap-root"></div>
 <div id="mm-content"></div>
 
+<!-- 마인드맵과 본문은 스크립트로 생성되므로, JS가 꺼진 환경에서도
+     핵심 정보는 읽을 수 있도록 최소한의 대체 내용을 둔다. -->
+<noscript>
+  <div id="mm-content">
+    <section class="mm-section">
+      <h3 class="mm-section-header">소개</h3>
+      <div class="mm-section-body">안녕하세요, 이용수입니다. 이곳은 저를 소개하는 개인 홈페이지입니다.</div>
+    </section>
+    <section class="mm-section">
+      <h3 class="mm-section-header">학력사항</h3>
+      <div class="mm-section-body">단국대학교 도시계획학과.</div>
+    </section>
+    <section class="mm-section">
+      <h3 class="mm-section-header">3D 모델 / 프로젝트</h3>
+      <div class="mm-section-body">
+        STL로 제작한 CAD 프로젝트(WWII Japanese Dagger, Small City 등)를
+        <a href="viewer.html" class="mm-inline-link">3D 뷰어</a>에서 볼 수 있습니다.
+      </div>
+    </section>
+    <section class="mm-section">
+      <h3 class="mm-section-header">연락처</h3>
+      <div class="mm-section-body">
+        <a href="mailto:yongsoo.b.lee@gmail.com" class="mm-inline-link">yongsoo.b.lee@gmail.com</a>
+      </div>
+    </section>
+  </div>
+</noscript>
+
 <footer>&copy; 2026 이용수. All rights reserved.</footer>
 
+<!-- head가 아닌 본문 끝에서 불러온다: three.js는 600KB 가까이 되는데
+     head에 두면 HTML 파싱을 막아 첫 화면이 그만큼 늦게 그려진다.
+     아래 인라인 스크립트보다는 먼저 실행되어야 하므로 순서는 유지. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="stl-core.js"></script>
 <script>
 (function () {
   var NS = 'http://www.w3.org/2000/svg';
@@ -378,23 +415,16 @@
     var modelGroup = new THREE.Group();
     scene.add(modelGroup);
 
-    fetch('stl/small-city.stl', { cache: 'no-store' })
+    // 모델 파일은 파일명이 곧 버전이라 브라우저 캐시를 그대로 쓴다
+    // (no-store로 두면 재방문마다 통째로 다시 받는다).
+    fetch('stl/small-city.stl')
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.arrayBuffer();
       })
       .then(function (buffer) {
         var geometry = parseSTL(buffer);
-        geometry.computeBoundingBox();
-        var box = geometry.boundingBox;
-        var center = new THREE.Vector3();
-        box.getCenter(center);
-        geometry.translate(-center.x, -center.y, -center.z);
-
-        var size = new THREE.Vector3();
-        box.getSize(size);
-        var maxDim = Math.max(size.x, size.y, size.z) || 1;
-        modelGroup.scale.setScalar(4 / maxDim);
+        modelGroup.scale.setScalar(fitGeometryToSize(geometry, 4).scale);
 
         var material = new THREE.MeshPhongMaterial({
           color: 0x1c2b45,
@@ -542,10 +572,11 @@
     return 'M ' + xa + ' ' + ya + ' L ' + xb + ' ' + bendY + ' L ' + xb + ' ' + yb;
   }
 
-  // 세부 항목 → 스파인(모든 헤더를 관통하는 세로선) 합류 지점까지의 경로
-  function elbowToSpine(xa, ya, spineX, yb, diagDrop) {
-    var bendY = Math.min(ya + diagDrop, yb);
-    return 'M ' + xa + ' ' + ya + ' L ' + spineX + ' ' + bendY + ' L ' + spineX + ' ' + yb;
+  // 모든 헤더를 세로로 관통하는 스파인의 x좌표(페이지 좌표).
+  // 강조선과 스파인 배치가 같은 값을 써야 하므로 한 곳에서만 계산한다.
+  function getSpineX() {
+    var firstHeaderRect = headerEls[0][0].getBoundingClientRect();
+    return Math.max(4, firstHeaderRect.left - 12 + window.pageXOffset);
   }
 
   var svg = el('svg', { viewBox: '0 0 680 430', role: 'img', 'aria-labelledby': 'mm-title mm-desc' });
@@ -562,7 +593,7 @@
 
   var branchPaths = [], branchDots = [], branchLabelEls = [];
   var childPaths = [], leafCircles = [], leafLabelEls = [];
-  var leaderPaths = [], headerEls = [], spineDots = [];
+  var headerEls = [], spineDots = [];
   var branchGEls = [], childrenGEls = [];
   var contentContainer = document.getElementById('mm-content');
   var overlay = document.getElementById('mm-leader-overlay');
@@ -584,6 +615,7 @@
 
   var activeHighlight = false;
   var activeBranchIndex = null;
+  var activeLeafIndex = null;
   var activeSpineDot = null;
 
   function clearHighlight() {
@@ -593,6 +625,7 @@
     activeSpineDot = null;
     activeHighlight = false;
     activeBranchIndex = null;
+    activeLeafIndex = null;
   }
 
   // 화면에 실제로 그려진 위치(getBoundingClientRect)를 기준으로 점을 구한다.
@@ -611,8 +644,7 @@
     var headerRect = headerEls[i][j].getBoundingClientRect();
     // spineDots[i][j]의 cx는 layoutLeaderLines()가 실행된 뒤에야 채워지므로
     // (rAF로 예약됨) 그 값에 기대지 않고 스파인 x좌표를 여기서 직접 계산한다.
-    var firstHeaderRect = headerEls[0][0].getBoundingClientRect();
-    var spineX = Math.max(4, firstHeaderRect.left - 12 + window.pageXOffset);
+    var spineX = getSpineX();
     var headerPt = [spineX, headerRect.top + headerRect.height / 2 + window.pageYOffset];
     var bendPt = [spineX, Math.min(leaf[1] + 50, headerPt[1])];
     return [
@@ -629,6 +661,11 @@
   // direction: 'down' — 중심에서 헤더 쪽으로(세부 항목 클릭) / 'up' — 헤더에서 중심 쪽으로(헤더 클릭)
   function highlightPath(i, j, direction) {
     var pts = buildTracePoints(i, j);
+    // 레이아웃이 아직 잡히지 않았으면 좌표에 NaN이 섞일 수 있다.
+    // 그대로 두면 getTotalLength()에서 터지므로 조용히 건너뛴다.
+    var valid = pts.every(function (p) { return isFinite(p[0]) && isFinite(p[1]); });
+    if (!valid) return;
+
     if (direction === 'up') pts = pts.slice().reverse();
 
     var d = 'M ' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L ');
@@ -656,6 +693,19 @@
     }
     activeHighlight = true;
     activeBranchIndex = i;
+    activeLeafIndex = j;
+  }
+
+  // 창 크기가 바뀌면 노드·헤더 위치가 전부 달라진다. 강조선이 떠 있는
+  // 상태라면 경로만 새 좌표로 다시 그려준다(애니메이션 없이 즉시).
+  function refreshHighlightGeometry() {
+    if (!activeHighlight || activeBranchIndex === null || activeLeafIndex === null) return;
+    var pts = buildTracePoints(activeBranchIndex, activeLeafIndex);
+    if (!pts.every(function (p) { return isFinite(p[0]) && isFinite(p[1]); })) return;
+    traceEl.setAttribute('d', 'M ' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L '));
+    traceEl.style.transition = 'none';
+    traceEl.style.strokeDasharray = 'none';
+    traceEl.style.strokeDashoffset = 0;
   }
 
   // 위치가 바뀔 때는 기존 선을 먼저 지우고(페이드 아웃이 끝난 뒤) 회전과 스크롤을 동시에 시작한다.
@@ -798,7 +848,6 @@
     childPaths[i] = [];
     leafCircles[i] = [];
     leafLabelEls[i] = [];
-    leaderPaths[i] = [];
     headerEls[i] = [];
     spineDots[i] = [];
 
@@ -851,16 +900,19 @@
       section.className = 'mm-section';
       section.id = 'content-' + i + '-' + j;
 
+      // <h3>로 제목 시맨틱을 유지하고, 실제 클릭 대상은 그 안의 <button>.
+      // (예전처럼 h3에 role="button"을 씌우면 제목 구조가 사라지고
+      //  aria-label이 제목 텍스트까지 덮어써서 모든 헤더가 똑같이 읽힌다.)
       var header = document.createElement('h3');
       header.className = 'mm-section-header';
-      header.tabIndex = 0;
-      header.setAttribute('role', 'button');
-      header.setAttribute('aria-label', '마인드맵으로 돌아가기');
-      header.textContent = branch.label + ' · ' + child.label;
-      header.addEventListener('click', function () { goToMap(i, j); });
-      header.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToMap(i, j); }
-      });
+
+      var headerBtn = document.createElement('button');
+      headerBtn.type = 'button';
+      headerBtn.className = 'mm-section-header-btn';
+      headerBtn.textContent = branch.label + ' · ' + child.label;
+      headerBtn.setAttribute('aria-label', branch.label + ' · ' + child.label + ', 마인드맵으로 돌아가기');
+      headerBtn.addEventListener('click', function () { goToMap(i, j); });
+      header.appendChild(headerBtn);
       headerEls[i][j] = header;
 
       var body = document.createElement('div');
@@ -875,10 +927,6 @@
       // it may need real layout (e.g. the 3D preview reads clientWidth/
       // clientHeight, which are 0 on a still-detached node).
       if (typeof child.render === 'function') child.render(body);
-
-      // 세부 항목 → 스파인까지의 안내선 (클릭 시에만 표시)
-      var leader = el('path', { class: 'mm-leader' }, overlay);
-      leaderPaths[i][j] = leader;
 
       // 스파인 위, 이 헤더와 만나는 지점의 점 (항상 표시 — 모든 헤더가 스파인에 연결돼 있음을 보여줌)
       var dot = el('circle', { class: 'mm-spine-dot', r: 4, fill: branch.color }, overlay);
@@ -934,22 +982,13 @@
     overlay.style.width = docW + 'px';
     overlay.style.height = docH + 'px';
 
-    var firstHeaderRect = headerEls[0][0].getBoundingClientRect();
-    var spineX = Math.max(4, firstHeaderRect.left - 12 + scrollX);
-
+    var spineX = getSpineX();
     var minY = Infinity, maxY = -Infinity;
 
-    for (var i = 0; i < leafCircles.length; i++) {
-      for (var j = 0; j < leafCircles[i].length; j++) {
-        var leafRect = leafCircles[i][j].getBoundingClientRect();
+    for (var i = 0; i < headerEls.length; i++) {
+      for (var j = 0; j < headerEls[i].length; j++) {
         var headerRect = headerEls[i][j].getBoundingClientRect();
-
-        var xa = leafRect.left + leafRect.width / 2 + scrollX;
-        var ya = leafRect.top + leafRect.height / 2 + scrollY;
         var yb = headerRect.top + headerRect.height / 2 + scrollY;
-
-        leaderPaths[i][j].setAttribute('d', elbowToSpine(xa, ya, spineX, yb, 50));
-        leaderPaths[i][j].setAttribute('stroke', data.children[i].color);
 
         spineDots[i][j].setAttribute('cx', spineX);
         spineDots[i][j].setAttribute('cy', yb);
@@ -960,6 +999,9 @@
     }
 
     spineLine.setAttribute('d', 'M ' + spineX + ' ' + minY + ' L ' + spineX + ' ' + maxY);
+
+    // 노드/헤더가 움직였으므로 떠 있는 강조선도 새 좌표로 맞춘다.
+    refreshHighlightGeometry();
   }
 
   requestAnimationFrame(layoutLeaderLines);

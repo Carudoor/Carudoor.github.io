@@ -56,8 +56,10 @@
   `backdrop-filter` 제거 / `DoubleSide`→`FrontSide` / 안티앨리어싱·해상도 조정 / blend-mode 제거 등을 시도했으나 효과 없었고, 사용자가 `about:support`에서 하드웨어 가속을 켜자 해결됨. **이 최적화 시도들은 전부 되돌려진 상태이며, 다시 시도할 필요 없음.**
 
 - **Claude의 브라우저 도구로 검증할 때 애니메이션이 전혀 안 움직이는 것은 도구 환경 문제.**
-  Browser 패널이 숨김 상태면 그 탭은 `window.innerWidth === 0`, `document.hidden === true`가 되고 **`requestAnimationFrame`도 CSS 트랜지션도 전혀 진행되지 않음**. 이때 캔버스가 0×0으로 나오거나 클릭해도 아무 일이 없는 것처럼 보이는데 **코드 버그가 아님**.
-  → 검증 전에 `preview_start`로 패널을 열고 `window.innerWidth`/`document.hidden`을 먼저 확인할 것.
+  Browser 패널이 숨김 상태면 그 탭은 `window.innerWidth === 0`, `document.hidden === true`가 되고
+  **`requestAnimationFrame` · CSS 트랜지션 · `ResizeObserver`가 전부 정지함**(렌더링 파이프라인에 묶인 것들). 이때 캔버스가 0폭으로 나오거나 클릭해도 아무 일이 없는 것처럼 보이는데 **코드 버그가 아님**.
+  → `preview_start`로 패널을 연 **직후**가 유일하게 살아있는 타이밍이고, 그 뒤 `navigate`를 호출하면 다시 숨겨지는 경향이 있음. 검증 전 항상 `document.hidden`/`window.innerWidth`부터 확인할 것.
+  → 애니메이션 자체는 검증이 어려우므로, **동기적으로 확인 가능한 것**(경로 `d` 문자열, 좌표 유한성, 클래스·속성 변화, 리사이즈 후 좌표 갱신 여부)으로 대신 검증하면 대부분 잡힌다.
 
 - **로컬에 python·node가 설치돼 있지 않아 로컬 서버를 띄울 수 없음.**
   `file://`로 열면 `fetch`가 막혀 STL/manifest 로딩이 실패함. **검증은 push 후 라이브 URL에서만 가능.**

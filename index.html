@@ -795,15 +795,16 @@
 
       var body = document.createElement('div');
       body.className = 'mm-section-body';
-      if (typeof child.render === 'function') {
-        child.render(body);
-      } else {
-        body.textContent = child.text || '';
-      }
+      if (!child.render) body.textContent = child.text || '';
 
       section.appendChild(header);
       section.appendChild(body);
       contentContainer.appendChild(section);
+
+      // render() runs only after the section is attached to the document —
+      // it may need real layout (e.g. the 3D preview reads clientWidth/
+      // clientHeight, which are 0 on a still-detached node).
+      if (typeof child.render === 'function') child.render(body);
 
       // 세부 항목 → 스파인까지의 안내선 (클릭 시에만 표시)
       var leader = el('path', { class: 'mm-leader' }, overlay);

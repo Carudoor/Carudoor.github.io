@@ -4,153 +4,201 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>이용수</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="stl-core.js"></script>
 <style>
   :root {
-    --bg: #fafafa;
-    --bg-card: #ffffff;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --accent: #2563eb;
-    --border: #e5e7eb;
+    --mm-text: #1f2937;
+    --mm-text-secondary: #6b7280;
+    --mm-line: #d1d5db;
+    --mm-accent: #2563eb;
+    --mm-root-fill: #2c2c2a;
+    --mm-root-text: #ffffff;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
+  * { box-sizing: border-box; }
+  html { scroll-behavior: auto; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
+    margin: 0;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: #fafafa;
+    color: var(--mm-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1rem 4rem;
   }
 
-  header {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 80px 24px 40px;
+  .site-header {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto 2rem;
+    text-align: center;
   }
-
-  header h1 {
-    font-size: 2.4rem;
+  .site-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    color: var(--mm-text);
   }
-
-  header p.tagline {
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: 1.05rem;
-  }
-
-  nav {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 0 24px 24px;
-    display: flex;
-    gap: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  nav a {
-    color: var(--muted);
-    text-decoration: none;
+  .site-header p {
+    margin: 6px 0 0;
+    color: var(--mm-text-secondary);
     font-size: 0.95rem;
-    padding-bottom: 12px;
   }
 
-  nav a:hover {
-    color: var(--text);
+  .mindmap {
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+    z-index: 1;
   }
-
-  main {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 40px 24px 100px;
+  .mindmap svg {
+    width: 100%;
+    height: auto;
+    display: block;
   }
-
-  section {
-    margin-bottom: 48px;
+  .mm-branch, .mm-leaf {
+    cursor: pointer;
   }
-
-  section h2 {
-    font-size: 1.1rem;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 16px;
+  .mm-branch:focus-visible circle,
+  .mm-leaf:focus-visible circle {
+    outline: 2px solid var(--mm-accent);
+    outline-offset: 2px;
   }
-
-  .about p {
-    color: var(--text);
-    font-size: 1rem;
+  .mm-children {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
   }
-
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 22px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  .mm-children.open {
+    opacity: 1;
+    pointer-events: auto;
   }
-
-  .edu-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 4px;
+  .mm-branch:hover circle.mm-dot,
+  .mm-leaf:hover circle.mm-dot {
+    filter: brightness(1.1);
   }
-
-  .edu-item .school {
+  .mm-connector {
+    transition: stroke 0.25s ease, stroke-width 0.25s ease;
+  }
+  .mm-connector.mm-path-highlight {
+    stroke: var(--mm-accent);
+    stroke-width: 2.5;
+  }
+  .mm-label-main {
+    font-size: 15px;
     font-weight: 600;
-    font-size: 1.05rem;
+    fill: var(--mm-text);
+  }
+  .mm-label-sub {
+    font-size: 13px;
+    font-weight: 400;
+    fill: var(--mm-text-secondary);
+  }
+  .mm-label-root {
+    font-size: 16px;
+    font-weight: 600;
+    fill: var(--mm-root-text);
   }
 
-  .edu-item .major {
-    color: var(--muted);
-    font-size: 0.95rem;
+  #mm-leader-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .mm-spine {
+    fill: none;
+    stroke: var(--mm-line);
+    stroke-dasharray: 4 4;
+    opacity: 0.35;
+  }
+  .mm-spine-dot {
+    stroke: #fafafa;
+    stroke-width: 1.5;
+    transition: r 0.2s ease, fill 0.2s ease;
+  }
+  .mm-spine-dot.mm-path-highlight {
+    fill: var(--mm-accent) !important;
+    r: 6;
+  }
+  .mm-leader {
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.25s ease, stroke 0.25s ease, stroke-width 0.25s ease;
+  }
+  .mm-leader.mm-path-highlight {
+    opacity: 1;
+    stroke: var(--mm-accent);
+    stroke-width: 2;
   }
 
-  .edu-item .period {
-    color: var(--muted);
-    font-size: 0.88rem;
-    white-space: nowrap;
+  #mm-content {
+    width: 100%;
+    max-width: 680px;
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .mm-section {
+    border-top: 1px solid var(--mm-line);
+    padding-top: 1rem;
+    scroll-margin-top: 1.5rem;
+    background: #fafafa;
+  }
+  .mm-section-header {
+    margin: 0 0 0.5rem;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--mm-text);
+    cursor: pointer;
+  }
+  .mm-section-header:hover,
+  .mm-section-header:focus-visible {
+    color: var(--mm-accent);
+  }
+  .mm-section-header:focus-visible {
+    outline: 2px solid var(--mm-accent);
+    outline-offset: 3px;
+  }
+  .mm-section-body {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--mm-text-secondary);
   }
 
-  .contact-list {
-    list-style: none;
-  }
-
-  .contact-list li {
-    margin-bottom: 8px;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
-
-  .contact-list a {
-    color: var(--text);
-    text-decoration: none;
-  }
-
-  .contact-list a:hover {
-    color: var(--accent);
-  }
-
-  .btn-link {
+  .mm-link-btn {
     display: inline-block;
-    color: var(--accent);
+    color: var(--mm-accent);
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 600;
-    border: 1px solid var(--accent);
+    border: 1px solid var(--mm-accent);
     border-radius: 6px;
     padding: 8px 16px;
   }
-
-  .btn-link:hover {
-    background: var(--accent);
+  .mm-link-btn:hover {
+    background: var(--mm-accent);
     color: #ffffff;
   }
+  .mm-inline-link {
+    color: var(--mm-accent);
+    text-decoration: none;
+  }
+  .mm-inline-link:hover {
+    text-decoration: underline;
+  }
 
+  /* Embedded 3D model preview (inside the "3D 모델 뷰어" leaf's content) —
+     stays dark intentionally: the STL viewer's lighting/materials are
+     designed for a dark background, a deliberate contrast against the
+     light page around it. */
   .model-preview {
     position: relative;
     width: 100%;
@@ -158,10 +206,9 @@
     border-radius: 8px;
     overflow: hidden;
     background: radial-gradient(ellipse at 50% 30%, #131722 0%, #0b0d12 70%);
-    border: 1px solid var(--border);
-    margin-bottom: 16px;
+    border: 1px solid var(--mm-line);
+    margin-bottom: 12px;
   }
-
   .model-preview canvas {
     display: block;
     width: 100%;
@@ -169,24 +216,19 @@
     cursor: grab;
     touch-action: none;
   }
-
   .model-preview canvas:active {
     cursor: grabbing;
   }
-
   .model-preview-status {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* fixed light color, not var(--muted) — this box stays dark
-       regardless of the page's light/dark theme */
     color: rgba(255, 255, 255, 0.55);
     font-size: 0.85rem;
     pointer-events: none;
   }
-
   .model-preview-hint {
     position: absolute;
     right: 10px;
@@ -197,254 +239,660 @@
   }
 
   footer {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 24px;
-    color: var(--muted);
+    width: 100%;
+    max-width: 680px;
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--mm-line);
+    color: var(--mm-text-secondary);
     font-size: 0.85rem;
-    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
   }
 </style>
 </head>
 <body>
 
-<header>
+<header class="site-header">
   <h1>이용수</h1>
-  <p class="tagline">개인 홈페이지에 오신 것을 환영합니다.</p>
+  <p>개인 홈페이지에 오신 것을 환영합니다. 아래 마인드맵의 항목을 눌러보세요.</p>
 </header>
 
-<nav>
-  <a href="#about">소개</a>
-  <a href="#education">학력사항</a>
-  <a href="#models">3D 모델</a>
-  <a href="#mindmap">마인드맵</a>
-  <a href="#contact">연락처</a>
-</nav>
+<svg id="mm-leader-overlay" aria-hidden="true"></svg>
+<div class="mindmap" id="mindmap-root"></div>
+<div id="mm-content"></div>
 
-<main>
-  <section id="about" class="about">
-    <h2>소개</h2>
-    <p>안녕하세요, 이용수입니다. 이곳은 저를 소개하는 개인 홈페이지입니다.</p>
-  </section>
+<footer>&copy; 2026 이용수. All rights reserved.</footer>
 
-  <section id="education">
-    <h2>학력사항</h2>
-    <div class="card">
-      <div class="edu-item">
-        <div>
-          <div class="school">단국대학교</div>
-          <div class="major">도시계획학과</div>
-        </div>
-        <div class="period"></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="models">
-    <h2>3D 모델</h2>
-    <div class="card">
-      <div class="model-preview" id="modelPreview">
-        <div class="model-preview-status" id="modelPreviewStatus">모델 불러오는 중…</div>
-        <div class="model-preview-hint" id="modelPreviewHint">드래그 · 회전 &nbsp;/&nbsp; 스크롤 · 확대</div>
-      </div>
-      <p style="margin-bottom: 14px;">STL 3D 모델을 홀로그램 스타일로 볼 수 있는 뷰어입니다.</p>
-      <a href="viewer.html" class="btn-link">전체 뷰어 열기 →</a>
-    </div>
-  </section>
-
-  <section id="mindmap">
-    <h2>마인드맵</h2>
-    <div class="card">
-      <p style="margin-bottom: 14px;">중심 주제에서 브랜치로 뻗어나가는 인터랙티브 마인드맵입니다. 항목을 클릭하면 관련 내용으로 이동합니다.</p>
-      <a href="mindmap.html" class="btn-link">마인드맵 열기 →</a>
-    </div>
-  </section>
-
-  <section id="contact">
-    <h2>연락처</h2>
-    <ul class="contact-list">
-      <li>Email: <a href="mailto:yongsoo.b.lee@gmail.com">yongsoo.b.lee@gmail.com</a></li>
-    </ul>
-  </section>
-</main>
-
-<footer>
-  &copy; 2026 이용수. All rights reserved.
-</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="stl-core.js"></script>
 <script>
-// Small teaser preview embedded on the homepage — same STL parser
-// (stl-core.js) as the full viewer.html, just a lightweight scene.
 (function () {
-  var container = document.getElementById('modelPreview');
-  var statusEl = document.getElementById('modelPreviewStatus');
-  if (!container || typeof THREE === 'undefined') return;
+  var NS = 'http://www.w3.org/2000/svg';
 
-  var scene = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
+  // 데이터: label/children 텍스트와 브랜치를 필요에 맞게 수정하세요.
+  // text: 일반 텍스트 본문 / render(bodyEl): 커스텀 콘텐츠(링크, 3D 미리보기 등)를 직접 그릴 때 사용.
+  var data = {
+    label: '이용수',
+    children: [
+      { label: '소개', color: '#2563eb', children: [
+        { label: '자기소개', text: '안녕하세요, 이용수입니다. 이곳은 저를 소개하는 개인 홈페이지입니다.' },
+        { label: '학력사항', text: '단국대학교 도시계획학과.' }
+      ]},
+      { label: '3D 모델 / 프로젝트', color: '#D85A30', children: [
+        { label: '3D 모델 뷰어', render: function (body) {
+          body.innerHTML =
+            '<div class="model-preview">' +
+              '<div class="model-preview-status">모델 불러오는 중…</div>' +
+              '<div class="model-preview-hint">드래그 · 회전 &nbsp;/&nbsp; 스크롤 · 확대</div>' +
+            '</div>' +
+            '<p style="margin:0 0 10px;">STL 3D 모델을 홀로그램 스타일로 볼 수 있는 뷰어입니다.</p>' +
+            '<a href="viewer.html" class="mm-link-btn">전체 뷰어 열기 →</a>';
+          initModelPreview(body.querySelector('.model-preview'), body.querySelector('.model-preview-status'));
+        }},
+        { label: '프로젝트', render: function (body) {
+          body.innerHTML =
+            '<p style="margin:0 0 10px;">STL로 제작한 CAD 프로젝트입니다: <strong>WWII Japanese Dagger</strong>(2020, 단검 모델링), ' +
+            '<strong>Small City</strong>(아파트 10동·마트 3개·상가 3개·주차장 1개로 구성한 도시 매스 모델링) 등이 있습니다.</p>' +
+            '<a href="viewer.html" class="mm-link-btn">전체 뷰어에서 보기 →</a>';
+        }}
+      ]},
+      { label: '연락처', color: '#059669', children: [
+        { label: '이메일', render: function (body) {
+          body.innerHTML = '연락 가능한 이메일입니다.<br>' +
+            '<a href="mailto:yongsoo.b.lee@gmail.com" class="mm-inline-link">yongsoo.b.lee@gmail.com</a>';
+        }}
+      ]}
+    ]
+  };
 
-  scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
-  var keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  keyLight.position.set(4, 6, 6);
-  scene.add(keyLight);
-  var rimLight = new THREE.DirectionalLight(0x5b8def, 0.8);
-  rimLight.position.set(-5, -2, -4);
-  scene.add(rimLight);
+  var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var scrollDuration = 1100;
 
-  var modelGroup = new THREE.Group();
-  scene.add(modelGroup);
+  function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
 
-  fetch('stl/small-city.stl', { cache: 'no-store' })
-    .then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.arrayBuffer();
-    })
-    .then(function (buffer) {
-      var geometry = parseSTL(buffer);
-      geometry.computeBoundingBox();
-      var box = geometry.boundingBox;
-      var center = new THREE.Vector3();
-      box.getCenter(center);
-      geometry.translate(-center.x, -center.y, -center.z);
-
-      var size = new THREE.Vector3();
-      box.getSize(size);
-      var maxDim = Math.max(size.x, size.y, size.z) || 1;
-      modelGroup.scale.setScalar(4 / maxDim);
-
-      var material = new THREE.MeshPhongMaterial({
-        color: 0x1c2b45,
-        emissive: 0x25406e,
-        emissiveIntensity: 0.4,
-        specular: 0x5b8def,
-        shininess: 60
-      });
-      modelGroup.add(new THREE.Mesh(geometry, material));
-
-      var edges = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry, 20),
-        new THREE.LineBasicMaterial({ color: 0x8fb0ff, transparent: true, opacity: 0.5 })
-      );
-      modelGroup.add(edges);
-
-      statusEl.style.display = 'none';
-      animate();
-    })
-    .catch(function (err) {
-      console.error(err);
-      statusEl.textContent = '모델을 불러올 수 없습니다.';
-    });
-
-  // ---------------------------------------------------------------
-  // Orbit / zoom controls — drag to rotate view, scroll/pinch to zoom.
-  // Camera orbits a fixed target on a sphere; auto-rotate pauses while
-  // the visitor is interacting and resumes shortly after they let go.
-  // ---------------------------------------------------------------
-  var spherical = { radius: 7, theta: 0.6, phi: 1.15 };
-  var target = new THREE.Vector3(0, 0.3, 0);
-  var isDragging = false;
-  var lastX = 0, lastY = 0;
-  var autoRotate = true;
-
-  function updateCameraFromSpherical() {
-    var r = spherical.radius, t = spherical.theta, p = spherical.phi;
-    camera.position.x = target.x + r * Math.sin(p) * Math.sin(t);
-    camera.position.y = target.y + r * Math.cos(p);
-    camera.position.z = target.z + r * Math.sin(p) * Math.cos(t);
-    camera.lookAt(target);
-  }
-  updateCameraFromSpherical();
-
-  // Once a visitor interacts, auto-rotate stops for good (no resume timer) —
-  // it was fighting the visitor's own framing.
-  function pauseAutoRotate() {
-    autoRotate = false;
-  }
-
-  var canvasEl = renderer.domElement;
-
-  canvasEl.addEventListener('mousedown', function (e) {
-    isDragging = true;
-    lastX = e.clientX; lastY = e.clientY;
-    pauseAutoRotate();
-  });
-  window.addEventListener('mouseup', function () { isDragging = false; });
-  window.addEventListener('mousemove', function (e) {
-    if (!isDragging) return;
-    var dx = e.clientX - lastX, dy = e.clientY - lastY;
-    lastX = e.clientX; lastY = e.clientY;
-    spherical.theta -= dx * 0.008;
-    spherical.phi -= dy * 0.008;
-    spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi));
-    updateCameraFromSpherical();
-  });
-
-  canvasEl.addEventListener('wheel', function (e) {
-    e.preventDefault();
-    pauseAutoRotate();
-    spherical.radius *= (1 + e.deltaY * 0.001);
-    spherical.radius = Math.max(2, Math.min(20, spherical.radius));
-    updateCameraFromSpherical();
-  }, { passive: false });
-
-  var touchLastX = 0, touchLastY = 0, touchStartDist = null;
-  canvasEl.addEventListener('touchstart', function (e) {
-    pauseAutoRotate();
-    if (e.touches.length === 1) {
-      touchLastX = e.touches[0].clientX;
-      touchLastY = e.touches[0].clientY;
-    } else if (e.touches.length === 2) {
-      var dx = e.touches[0].clientX - e.touches[1].clientX;
-      var dy = e.touches[0].clientY - e.touches[1].clientY;
-      touchStartDist = Math.sqrt(dx * dx + dy * dy);
+  function smoothScrollTo(targetY) {
+    targetY = Math.max(0, targetY);
+    if (prefersReduced) { window.scrollTo(0, targetY); return; }
+    var startY = window.pageYOffset;
+    var diff = targetY - startY;
+    if (Math.abs(diff) < 1) return;
+    var start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      var t = Math.min((ts - start) / scrollDuration, 1);
+      window.scrollTo(0, startY + diff * easeInOutQuad(t));
+      if (t < 1) requestAnimationFrame(step);
     }
-  }, { passive: true });
+    requestAnimationFrame(step);
+  }
 
-  canvasEl.addEventListener('touchmove', function (e) {
-    if (e.touches.length === 1) {
-      var dx = e.touches[0].clientX - touchLastX;
-      var dy = e.touches[0].clientY - touchLastY;
-      touchLastX = e.touches[0].clientX;
-      touchLastY = e.touches[0].clientY;
-      spherical.theta -= dx * 0.009;
-      spherical.phi -= dy * 0.009;
+  function scrollElementToCenter(target) {
+    var rect = target.getBoundingClientRect();
+    smoothScrollTo(rect.top + window.pageYOffset - (window.innerHeight / 2 - rect.height / 2));
+  }
+
+  function scrollElementToTop(target, offset) {
+    var rect = target.getBoundingClientRect();
+    smoothScrollTo(rect.top + window.pageYOffset - (offset || 20));
+  }
+
+  // ---------------------------------------------------------------
+  // Embedded 3D model preview — same STL parser (stl-core.js) and
+  // orbit/zoom interaction as viewer.html, just a lightweight scene
+  // bound to whatever container element it's given.
+  // ---------------------------------------------------------------
+  function initModelPreview(container, statusEl) {
+    if (!container || typeof THREE === 'undefined') return;
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+    var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
+    var keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    keyLight.position.set(4, 6, 6);
+    scene.add(keyLight);
+    var rimLight = new THREE.DirectionalLight(0x5b8def, 0.8);
+    rimLight.position.set(-5, -2, -4);
+    scene.add(rimLight);
+
+    var modelGroup = new THREE.Group();
+    scene.add(modelGroup);
+
+    fetch('stl/small-city.stl', { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.arrayBuffer();
+      })
+      .then(function (buffer) {
+        var geometry = parseSTL(buffer);
+        geometry.computeBoundingBox();
+        var box = geometry.boundingBox;
+        var center = new THREE.Vector3();
+        box.getCenter(center);
+        geometry.translate(-center.x, -center.y, -center.z);
+
+        var size = new THREE.Vector3();
+        box.getSize(size);
+        var maxDim = Math.max(size.x, size.y, size.z) || 1;
+        modelGroup.scale.setScalar(4 / maxDim);
+
+        var material = new THREE.MeshPhongMaterial({
+          color: 0x1c2b45,
+          emissive: 0x25406e,
+          emissiveIntensity: 0.4,
+          specular: 0x5b8def,
+          shininess: 60
+        });
+        modelGroup.add(new THREE.Mesh(geometry, material));
+
+        var edges = new THREE.LineSegments(
+          new THREE.EdgesGeometry(geometry, 20),
+          new THREE.LineBasicMaterial({ color: 0x8fb0ff, transparent: true, opacity: 0.5 })
+        );
+        modelGroup.add(edges);
+
+        if (statusEl) statusEl.style.display = 'none';
+        animate();
+      })
+      .catch(function (err) {
+        console.error(err);
+        if (statusEl) statusEl.textContent = '모델을 불러올 수 없습니다.';
+      });
+
+    var spherical = { radius: 7, theta: 0.6, phi: 1.15 };
+    var target = new THREE.Vector3(0, 0.3, 0);
+    var isDragging = false;
+    var lastX = 0, lastY = 0;
+    var autoRotate = true;
+
+    function updateCameraFromSpherical() {
+      var r = spherical.radius, t = spherical.theta, p = spherical.phi;
+      camera.position.x = target.x + r * Math.sin(p) * Math.sin(t);
+      camera.position.y = target.y + r * Math.cos(p);
+      camera.position.z = target.z + r * Math.sin(p) * Math.cos(t);
+      camera.lookAt(target);
+    }
+    updateCameraFromSpherical();
+
+    // Once a visitor interacts, auto-rotate stops for good.
+    function pauseAutoRotate() { autoRotate = false; }
+
+    var canvasEl = renderer.domElement;
+
+    canvasEl.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      pauseAutoRotate();
+    });
+    window.addEventListener('mouseup', function () { isDragging = false; });
+    window.addEventListener('mousemove', function (e) {
+      if (!isDragging) return;
+      var dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      spherical.theta -= dx * 0.008;
+      spherical.phi -= dy * 0.008;
       spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi));
       updateCameraFromSpherical();
-    } else if (e.touches.length === 2 && touchStartDist !== null) {
-      var ddx = e.touches[0].clientX - e.touches[1].clientX;
-      var ddy = e.touches[0].clientY - e.touches[1].clientY;
-      var dist = Math.sqrt(ddx * ddx + ddy * ddy);
-      var delta = dist - touchStartDist;
-      touchStartDist = dist;
-      spherical.radius *= (1 - delta * 0.006);
+    });
+
+    canvasEl.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      pauseAutoRotate();
+      spherical.radius *= (1 + e.deltaY * 0.001);
       spherical.radius = Math.max(2, Math.min(20, spherical.radius));
       updateCameraFromSpherical();
-    }
-  }, { passive: true });
+    }, { passive: false });
 
-  function animate() {
-    requestAnimationFrame(animate);
-    if (autoRotate && !isDragging) {
-      spherical.theta += 0.0025;
-      updateCameraFromSpherical();
+    var touchLastX = 0, touchLastY = 0, touchStartDist = null;
+    canvasEl.addEventListener('touchstart', function (e) {
+      pauseAutoRotate();
+      if (e.touches.length === 1) {
+        touchLastX = e.touches[0].clientX;
+        touchLastY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDist = Math.sqrt(dx * dx + dy * dy);
+      }
+    }, { passive: true });
+
+    canvasEl.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 1) {
+        var dx = e.touches[0].clientX - touchLastX;
+        var dy = e.touches[0].clientY - touchLastY;
+        touchLastX = e.touches[0].clientX;
+        touchLastY = e.touches[0].clientY;
+        spherical.theta -= dx * 0.009;
+        spherical.phi -= dy * 0.009;
+        spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi));
+        updateCameraFromSpherical();
+      } else if (e.touches.length === 2 && touchStartDist !== null) {
+        var ddx = e.touches[0].clientX - e.touches[1].clientX;
+        var ddy = e.touches[0].clientY - e.touches[1].clientY;
+        var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+        var delta = dist - touchStartDist;
+        touchStartDist = dist;
+        spherical.radius *= (1 - delta * 0.006);
+        spherical.radius = Math.max(2, Math.min(20, spherical.radius));
+        updateCameraFromSpherical();
+      }
+    }, { passive: true });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (autoRotate && !isDragging) {
+        spherical.theta += 0.0025;
+        updateCameraFromSpherical();
+      }
+      renderer.render(scene, camera);
     }
-    renderer.render(scene, camera);
+
+    window.addEventListener('resize', function () {
+      var w = container.clientWidth, h = container.clientHeight;
+      if (!w || !h) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
   }
 
+  // 모바일 스크롤을 고려해 트리는 항상 아래로만 자란다: 중심 → 브랜치 행 → 세부 브랜치 행
+  var cx = 340;
+  var Y0 = 75, Y1 = 210, Y2 = 350;
+  var centralR = 48, dotR2 = 11, dotR3 = 7;
+  var n = data.children.length;
+  var branchMargin = 130;
+  var branchSpacing = n > 1 ? (680 - 2 * branchMargin) / (n - 1) : 0;
+  var childSpread = 90;
+
+  function slotX(slot) { return n > 1 ? branchMargin + slot * branchSpacing : cx; }
+  function childOffset(count, j) { return count === 1 ? 0 : -childSpread / 2 + j * (childSpread / (count - 1)); }
+
+  function el(tag, attrs, parent, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  // 대각으로 나왔다가 아래로 뻗는 연결선 경로 (elbow connector). 항상 아래 방향으로만 그려진다.
+  function elbowPath(xa, ya, xb, yb, fraction) {
+    var bendY = ya + (yb - ya) * fraction;
+    return 'M ' + xa + ' ' + ya + ' L ' + xb + ' ' + bendY + ' L ' + xb + ' ' + yb;
+  }
+
+  // 세부 항목 → 스파인(모든 헤더를 관통하는 세로선) 합류 지점까지의 경로
+  function elbowToSpine(xa, ya, spineX, yb, diagDrop) {
+    var bendY = Math.min(ya + diagDrop, yb);
+    return 'M ' + xa + ' ' + ya + ' L ' + spineX + ' ' + bendY + ' L ' + spineX + ' ' + yb;
+  }
+
+  var svg = el('svg', { viewBox: '0 0 680 430', role: 'img', 'aria-labelledby': 'mm-title mm-desc' });
+  el('title', { id: 'mm-title' }, svg, '마인드맵');
+  el('desc', { id: 'mm-desc' }, svg, '이용수라는 중심 주제에서 아래로 뻗어나가는 브랜치형 마인드맵. 세부 항목을 클릭하면 관련 내용으로 이동합니다.');
+
+  var linesLayer = el('g', {}, svg);
+  var nodesLayer = el('g', {}, svg);
+
+  // 중심 노드
+  var rootG = el('g', {}, nodesLayer);
+  el('circle', { cx: cx, cy: Y0, r: centralR, fill: 'var(--mm-root-fill)' }, rootG);
+  el('text', { class: 'mm-label-root', x: cx, y: Y0, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, rootG, data.label);
+
+  var branchPaths = [], branchDots = [], branchLabelEls = [];
+  var childPaths = [], leafCircles = [], leafLabelEls = [];
+  var leaderPaths = [], headerEls = [], spineDots = [];
+  var branchGEls = [], childrenGEls = [];
+  var contentContainer = document.getElementById('mm-content');
+  var overlay = document.getElementById('mm-leader-overlay');
+  var spineLine = el('path', { class: 'mm-spine' }, overlay);
+
+  var currentOrder = [];
+  for (var oi = 0; oi < n; oi++) currentOrder.push(oi);
+
+  // 각 브랜치 내부 세부 항목의 표시 순서
+  var childOrders = [];
+  for (var ci = 0; ci < n; ci++) {
+    var co = [];
+    for (var cj = 0; cj < data.children[ci].children.length; cj++) co.push(cj);
+    childOrders.push(co);
+  }
+
+  var activeHighlight = null;
+  var activeBranchIndex = null;
+
+  function clearHighlight() {
+    if (!activeHighlight) return;
+    activeHighlight.forEach(function (p) { p.classList.remove('mm-path-highlight'); });
+    activeHighlight = null;
+    activeBranchIndex = null;
+  }
+
+  function highlightPath(i, j) {
+    clearHighlight();
+    var els = [branchPaths[i]];
+    if (typeof j === 'number') {
+      els.push(childPaths[i][j]);
+      if (leaderPaths[i] && leaderPaths[i][j]) els.push(leaderPaths[i][j]);
+      if (spineDots[i] && spineDots[i][j]) els.push(spineDots[i][j]);
+    }
+    els.forEach(function (p) { p.classList.add('mm-path-highlight'); });
+    activeHighlight = els;
+    activeBranchIndex = i;
+  }
+
+  // 위치가 바뀔 때는 기존 선을 먼저 지우고(페이드 아웃이 끝난 뒤) 회전과 스크롤을 동시에 시작한다.
+  var HIGHLIGHT_FADE = 260;
+
+  function clearHighlightThen(needsMove, callback) {
+    if (!activeHighlight || !needsMove || prefersReduced) {
+      clearHighlight();
+      callback();
+      return;
+    }
+    clearHighlight();
+    setTimeout(callback, HIGHLIGHT_FADE);
+  }
+
+  function goToContent(i, j) {
+    var needsMove = currentOrder.indexOf(i) !== 0 || childOrders[i].indexOf(j) !== 0;
+    clearHighlightThen(needsMove, function () {
+      // 회전과 스크롤을 동시에 진행하고, 회전이 끝나면 선을 그린다.
+      var target = document.getElementById('content-' + i + '-' + j);
+      if (target) scrollElementToCenter(target);
+      moveToLeftmost(i, j, function () { highlightPath(i, j); });
+    });
+  }
+
+  function goToMap(i, j) {
+    if (childrenGEls[i] && !childrenGEls[i].classList.contains('open')) {
+      childrenGEls[i].classList.add('open');
+      if (branchGEls[i]) branchGEls[i].setAttribute('aria-expanded', 'true');
+    }
+    var needsMove = currentOrder.indexOf(i) !== 0 || childOrders[i].indexOf(j) !== 0;
+    clearHighlightThen(needsMove, function () {
+      scrollElementToTop(document.getElementById('mindmap-root'));
+      moveToLeftmost(i, j, function () { highlightPath(i, j); });
+    });
+  }
+
+  // 선택한 브랜치를 가장 왼쪽으로 회전시키고, 세부 항목을 함께 지정했다면
+  // 그 브랜치 안에서도 해당 항목이 가장 왼쪽에 오도록 회전시킨다.
+  // (헤더로 이어지는 선이 최대한 짧고 곧게 보이도록)
+  function moveToLeftmost(i, j, callback) {
+    var idx = currentOrder.indexOf(i);
+    var newOrder = idx === 0 ? currentOrder.slice()
+      : currentOrder.slice(idx).concat(currentOrder.slice(0, idx));
+
+    var newChildOrder = childOrders[i].slice();
+    if (typeof j === 'number') {
+      var cidx = newChildOrder.indexOf(j);
+      if (cidx > 0) newChildOrder = newChildOrder.slice(cidx).concat(newChildOrder.slice(0, cidx));
+    }
+
+    var branchMoved = idx !== 0;
+    var childMoved = newChildOrder.join() !== childOrders[i].join();
+    if (!branchMoved && !childMoved) {
+      if (callback) callback();
+      return;
+    }
+
+    if (prefersReduced) {
+      currentOrder = newOrder;
+      childOrders[i] = newChildOrder;
+      applyLayout();
+      layoutLeaderLines();
+      if (callback) callback();
+      return;
+    }
+
+    animateReorder(newOrder, i, newChildOrder, 450, function () {
+      layoutLeaderLines();
+      if (callback) callback();
+    });
+  }
+
+  function animateReorder(newOrder, movedBranch, newChildOrder, duration, done) {
+    var oldOrder = currentOrder.slice();
+    var oldChildOrder = childOrders[movedBranch].slice();
+    var start = null;
+    function ease(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+    function frame(ts) {
+      if (!start) start = ts;
+      var et = ease(Math.min((ts - start) / duration, 1));
+      for (var i = 0; i < n; i++) {
+        var x2 = slotX(oldOrder.indexOf(i)) + (slotX(newOrder.indexOf(i)) - slotX(oldOrder.indexOf(i))) * et;
+        branchDots[i].setAttribute('cx', x2);
+        branchLabelEls[i].setAttribute('x', x2);
+        branchPaths[i].setAttribute('d', elbowPath(cx, Y0, x2, Y1, 0.35));
+
+        var childCount = data.children[i].children.length;
+        var fromOrder = i === movedBranch ? oldChildOrder : childOrders[i];
+        var toOrder = i === movedBranch ? newChildOrder : childOrders[i];
+        for (var j = 0; j < childCount; j++) {
+          var fromOff = childOffset(childCount, fromOrder.indexOf(j));
+          var toOff = childOffset(childCount, toOrder.indexOf(j));
+          var x3 = x2 + fromOff + (toOff - fromOff) * et;
+          leafCircles[i][j].setAttribute('cx', x3);
+          leafLabelEls[i][j].setAttribute('x', x3);
+          childPaths[i][j].setAttribute('d', elbowPath(x2, Y1, x3, Y2, 0.35));
+        }
+      }
+      if (et < 1 && (ts - start) < duration) {
+        requestAnimationFrame(frame);
+      } else {
+        currentOrder = newOrder;
+        childOrders[movedBranch] = newChildOrder;
+        if (done) done();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function applyLayout() {
+    for (var i = 0; i < n; i++) {
+      var x2 = slotX(currentOrder.indexOf(i));
+      branchDots[i].setAttribute('cx', x2);
+      branchLabelEls[i].setAttribute('x', x2);
+      branchPaths[i].setAttribute('d', elbowPath(cx, Y0, x2, Y1, 0.35));
+      var childCount = data.children[i].children.length;
+      for (var j = 0; j < childCount; j++) {
+        var x3 = x2 + childOffset(childCount, childOrders[i].indexOf(j));
+        leafCircles[i][j].setAttribute('cx', x3);
+        leafLabelEls[i][j].setAttribute('x', x3);
+        childPaths[i][j].setAttribute('d', elbowPath(x2, Y1, x3, Y2, 0.35));
+      }
+    }
+  }
+
+  data.children.forEach(function (branch, i) {
+    var x2 = slotX(i);
+    var y2 = Y1;
+
+    var branchPath = el('path', {
+      class: 'mm-connector',
+      d: elbowPath(cx, Y0, x2, y2, 0.35),
+      fill: 'none',
+      stroke: 'var(--mm-line)',
+      'stroke-width': '1.5',
+      'stroke-linejoin': 'round'
+    }, linesLayer);
+    branchPaths[i] = branchPath;
+    childPaths[i] = [];
+    leafCircles[i] = [];
+    leafLabelEls[i] = [];
+    leaderPaths[i] = [];
+    headerEls[i] = [];
+    spineDots[i] = [];
+
+    var childrenG = el('g', { class: 'mm-children', id: 'mm-children-' + i }, nodesLayer);
+    childrenGEls[i] = childrenG;
+
+    var branchG = el('g', {
+      class: 'mm-branch',
+      tabindex: '0',
+      role: 'button',
+      'aria-expanded': 'false',
+      'aria-label': branch.label + ' 브랜치, 세부 항목 펼치기'
+    }, nodesLayer);
+    branchGEls[i] = branchG;
+    branchDots[i] = el('circle', { class: 'mm-dot', cx: x2, cy: y2, r: dotR2, fill: branch.color }, branchG);
+    branchLabelEls[i] = el('text', { class: 'mm-label-main', x: x2, y: y2 + dotR2 + 6, 'text-anchor': 'middle', 'dominant-baseline': 'hanging' }, branchG, branch.label);
+
+    var childCount = branch.children.length;
+    branch.children.forEach(function (child, j) {
+      var x3 = x2 + childOffset(childCount, j);
+      var y3 = Y2;
+
+      var childPath = el('path', {
+        class: 'mm-connector',
+        d: elbowPath(x2, y2, x3, y3, 0.35),
+        fill: 'none',
+        stroke: 'var(--mm-line)',
+        'stroke-width': '1',
+        opacity: '0.8',
+        'stroke-linejoin': 'round'
+      }, childrenG);
+      childPaths[i][j] = childPath;
+
+      var leafG = el('g', {
+        class: 'mm-leaf',
+        tabindex: '0',
+        role: 'button',
+        'aria-label': child.label + ' 항목, 관련 내용으로 이동'
+      }, childrenG);
+      leafCircles[i][j] = el('circle', { cx: x3, cy: y3, r: dotR3, fill: branch.color, opacity: '0.85' }, leafG);
+      leafLabelEls[i][j] = el('text', { class: 'mm-label-sub', x: x3, y: y3 + dotR3 + 6, 'text-anchor': 'middle', 'dominant-baseline': 'hanging' }, leafG, child.label);
+
+      leafG.addEventListener('click', function () { goToContent(i, j); });
+      leafG.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToContent(i, j); }
+      });
+
+      // 세부 항목에 대응하는 본문 섹션 (헤더 클릭 시 마인드맵으로 복귀)
+      var section = document.createElement('section');
+      section.className = 'mm-section';
+      section.id = 'content-' + i + '-' + j;
+
+      var header = document.createElement('h3');
+      header.className = 'mm-section-header';
+      header.tabIndex = 0;
+      header.setAttribute('role', 'button');
+      header.setAttribute('aria-label', '마인드맵으로 돌아가기');
+      header.textContent = branch.label + ' · ' + child.label;
+      header.addEventListener('click', function () { goToMap(i, j); });
+      header.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToMap(i, j); }
+      });
+      headerEls[i][j] = header;
+
+      var body = document.createElement('div');
+      body.className = 'mm-section-body';
+      if (typeof child.render === 'function') {
+        child.render(body);
+      } else {
+        body.textContent = child.text || '';
+      }
+
+      section.appendChild(header);
+      section.appendChild(body);
+      contentContainer.appendChild(section);
+
+      // 세부 항목 → 스파인까지의 안내선 (클릭 시에만 표시)
+      var leader = el('path', { class: 'mm-leader' }, overlay);
+      leaderPaths[i][j] = leader;
+
+      // 스파인 위, 이 헤더와 만나는 지점의 점 (항상 표시 — 모든 헤더가 스파인에 연결돼 있음을 보여줌)
+      var dot = el('circle', { class: 'mm-spine-dot', r: 4, fill: branch.color }, overlay);
+      spineDots[i][j] = dot;
+    });
+
+    function toggle() {
+      var isOpen = childrenG.classList.contains('open');
+      var isLeftmost = currentOrder.indexOf(i) === 0;
+
+      if (isOpen && isLeftmost) {
+        // 이미 선택되어 열려있는(가장 왼쪽) 브랜치는 다시 눌러도 그대로 유지한다.
+        return;
+      }
+
+      if (isOpen) {
+        childrenG.classList.remove('open');
+        branchG.setAttribute('aria-expanded', 'false');
+        // 닫히는 브랜치에 활성화된 안내선이 걸려 있었다면 함께 정리해 선이 끊긴 채 남지 않게 한다.
+        if (activeBranchIndex === i) clearHighlight();
+        return;
+      }
+
+      childrenG.classList.add('open');
+      branchG.setAttribute('aria-expanded', 'true');
+    }
+    branchG.addEventListener('click', toggle);
+    branchG.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  });
+
+  document.getElementById('mindmap-root').appendChild(svg);
+
+  // 모든 좌표는 실제 렌더링된 픽셀 위치를 기준으로 계산한다 (반응형 대응)
+  function layoutLeaderLines() {
+    var docW = document.documentElement.scrollWidth;
+    var docH = document.documentElement.scrollHeight;
+    overlay.setAttribute('width', docW);
+    overlay.setAttribute('height', docH);
+    overlay.style.width = docW + 'px';
+    overlay.style.height = docH + 'px';
+
+    var scrollX = window.pageXOffset;
+    var scrollY = window.pageYOffset;
+
+    var firstHeaderRect = headerEls[0][0].getBoundingClientRect();
+    var spineX = Math.max(4, firstHeaderRect.left - 12 + scrollX);
+
+    var minY = Infinity, maxY = -Infinity;
+
+    for (var i = 0; i < leafCircles.length; i++) {
+      for (var j = 0; j < leafCircles[i].length; j++) {
+        var leafRect = leafCircles[i][j].getBoundingClientRect();
+        var headerRect = headerEls[i][j].getBoundingClientRect();
+
+        var xa = leafRect.left + leafRect.width / 2 + scrollX;
+        var ya = leafRect.top + leafRect.height / 2 + scrollY;
+        var yb = headerRect.top + headerRect.height / 2 + scrollY;
+
+        leaderPaths[i][j].setAttribute('d', elbowToSpine(xa, ya, spineX, yb, 50));
+        leaderPaths[i][j].setAttribute('stroke', data.children[i].color);
+
+        spineDots[i][j].setAttribute('cx', spineX);
+        spineDots[i][j].setAttribute('cy', yb);
+
+        if (yb < minY) minY = yb;
+        if (yb > maxY) maxY = yb;
+      }
+    }
+
+    spineLine.setAttribute('d', 'M ' + spineX + ' ' + minY + ' L ' + spineX + ' ' + maxY);
+  }
+
+  requestAnimationFrame(layoutLeaderLines);
+  var resizeTimer;
   window.addEventListener('resize', function () {
-    var w = container.clientWidth, h = container.clientHeight;
-    if (!w || !h) return;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layoutLeaderLines, 150);
   });
 })();
 </script>
+
 </body>
 </html>

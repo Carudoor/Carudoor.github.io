@@ -9,7 +9,7 @@
 
 - **GitHub Pages 사용자 사이트**: `Carudoor/carudoor.github.io` → https://carudoor.github.io
 - 빌드 도구·프레임워크·패키지 매니저 **없음**. 정적 HTML/CSS/JS만 `main` 브랜치 루트에서 그대로 서빙됨.
-- 로컬 경로: `C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오`
+- 로컬 경로: `C:\Users\yslee\OneDrive\바탕 화면\프로젝트\개인 웹사이트`
 
 ### 파일 구조
 
@@ -200,7 +200,7 @@ slides/
 
 ```bash
 # 저장소 위치
-cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
+cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\개인 웹사이트"
 ```
 
 | 하고 싶은 것 | 건드릴 곳 |

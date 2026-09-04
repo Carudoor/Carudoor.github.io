@@ -12,7 +12,7 @@
 | 경로 | 역할 |
 |---|---|
 | `images/` | 슬라이드 PNG. `<덱이름>-<번호>.png` 형식 |
-| `manifest.json` | 표시할 슬라이드의 순서와 전환 효과. **직접 관리하는 파일** |
+| `manifest.json` | 표시할 이미지 파일명을 **순서대로** 담은 배열 |
 
 ## 새 발표자료 추가하는 법
 
@@ -31,10 +31,11 @@
    (예: `capstone-1.png`, `capstone-2.png` …)
    PowerPoint가 만든 `슬라이드1.PNG` 같은 이름은 번호만 남기고 바꿔주세요.
 
-3. **`manifest.json` 에 순서대로 항목을 추가합니다.**
+3. **`manifest.json` 에 파일명을 순서대로 적습니다.**
    ```json
    [
-     { "file": "capstone-1.png", "effect": "fade", "direction": null, "reverse": false, "duration": 600 }
+     "capstone-1.png",
+     "capstone-2.png"
    ]
    ```
    여러 덱을 넣으면 배열에 적힌 순서대로 이어붙여 하나로 표시됩니다.
@@ -47,25 +48,18 @@
    git push
    ```
 
-## 전환 효과
+## 뷰어 조작
 
-`manifest.json`의 각 항목에서 지정합니다. 뷰어(`slides-core.js`)가 지원하는 값:
+- 좌우 화살표 버튼 / 우측 점 클릭
+- 전체 화면(`slides.html`)에서는 `←` `→` `Space` 키
+- 모바일에서는 좌우 스와이프
 
-| `effect` | 설명 | `direction` |
-|---|---|---|
-| `fade` | 서서히 나타남 (기본값) | 사용 안 함 |
-| `cut` | 즉시 전환 | 사용 안 함 |
-| `zoom` | 살짝 확대되며 등장 | 사용 안 함 |
-| `push` | 지정한 방향에서 밀고 들어옴 | `l` `r` `u` `d` `ld` `lu` `rd` `ru` |
-
-- `duration`: 밀리초 (기본 600)
-- `reverse`: `true`면 `push` 방향을 반대로 뒤집습니다
+슬라이드는 효과 없이 바로 전환됩니다.
 
 ## 현재 들어있는 덱
 
 - `buipji-mid-*.png` — "부입지 중간범위 (1차)" 43장 (1600×900).
   원본 pptx가 178.8MB라 로컬 PowerPoint로 변환해 이미지만 넣었습니다(21.8MB).
-  원본에 전환 효과가 지정돼 있지 않아 전부 기본 Fade입니다.
 
 ## 알려진 한계
 

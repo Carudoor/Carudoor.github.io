@@ -11,15 +11,10 @@
 //     keyboard: true,   // ← / → / Space
 //     emptyText: '...'  // 슬라이드가 없을 때 보여줄 안내
 //   });
+//
+// 매니페스트는 이미지 파일명을 순서대로 담은 배열이다:
+//   ["deck-1.png", "deck-2.png", ...]
 // ---------------------------------------------------------------
-
-// manifest의 direction 값(l/r/u/d 및 대각선) -> 이동 벡터
-var DECK_DIR_VECTOR = {
-  l:  [1, 0],   r:  [-1, 0],
-  u:  [0, 1],   d:  [0, -1],
-  ld: [1, 1],   lu: [1, -1],
-  rd: [-1, 1],  ru: [-1, -1]
-};
 
 function mountSlideDeck(root, options) {
   if (!root) return;
@@ -102,28 +97,15 @@ function mountSlideDeck(root, options) {
 
   function buildSlides(entries) {
     entries.forEach(function (entry, i) {
-      // 하위 호환: manifest가 예전처럼 문자열 배열이면 fade로 처리
-      var data = typeof entry === 'string'
-        ? { file: entry, effect: 'fade', direction: null, reverse: false, duration: 600 }
-        : entry;
+      // 파일명 문자열이 기본. 예전 형식({file: ...})도 조용히 받아준다.
+      var file = typeof entry === 'string' ? entry : (entry && entry.file);
+      if (!file) return;
 
       var section = document.createElement('section');
       section.className = 'slide';
-      section.dataset.effect = data.effect || 'fade';
-      section.style.setProperty('--dur', (data.duration || 600) + 'ms');
-
-      if (data.effect === 'push') {
-        var v = DECK_DIR_VECTOR[data.direction] || [1, 0];
-        var vx = v[0], vy = v[1];
-        if (data.reverse) { vx *= -1; vy *= -1; }
-        section.style.setProperty('--enter-x', (vx * 100) + '%');
-        section.style.setProperty('--enter-y', (vy * 100) + '%');
-        section.style.setProperty('--exit-x', (vx * -100) + '%');
-        section.style.setProperty('--exit-y', (vy * -100) + '%');
-      }
 
       var img = document.createElement('img');
-      img.src = imageBase + data.file;
+      img.src = imageBase + file;
       img.alt = '슬라이드 ' + (i + 1);
       img.loading = i < 2 ? 'eager' : 'lazy';
       section.appendChild(img);
@@ -144,19 +126,13 @@ function mountSlideDeck(root, options) {
       }
     });
 
-    render(null, null);
+    render();
   }
 
-  function render(prevIndex, direction) {
+  function render() {
     slides.forEach(function (s, i) {
-      s.classList.remove('active', 'exit');
-      if (i === current) s.classList.add('active');
+      s.classList.toggle('active', i === current);
     });
-    // push 효과는 나가는 슬라이드도 반대 방향으로 밀려나야 자연스럽다.
-    if (prevIndex !== null && direction === 'next' &&
-        slides[prevIndex].dataset.effect === 'push') {
-      slides[prevIndex].classList.add('exit');
-    }
     dots.forEach(function (d, i) { d.classList.toggle('active', i === current); });
     if (progressFill) {
       progressFill.style.width = (((current + 1) / slides.length) * 100) + '%';
@@ -169,10 +145,8 @@ function mountSlideDeck(root, options) {
   function goTo(index) {
     if (slides.length === 0) return;
     if (index < 0 || index >= slides.length || index === current) return;
-    var prev = current;
-    var direction = index > current ? 'next' : 'prev';
     current = index;
-    render(prev, direction);
+    render();
   }
 
   nextBtn.addEventListener('click', function () { goTo(current + 1); });

@@ -52,7 +52,6 @@
   padding: 5% 5%;
   opacity: 0;
   pointer-events: none;
-  will-change: transform, opacity;
   background: var(--deck-stage);
 }
 .deck .slide.active {
@@ -67,27 +66,6 @@
   border-radius: 2px;
 }
 
-/* --enter-x / --enter-y / --exit-x / --exit-y / --dur 는 manifest.json에 적힌
-   전환 정보를 바탕으로 슬라이드마다 JS가 지정한다. */
-.deck .slide[data-effect="fade"] {
-  transition: opacity var(--dur, 600ms) ease;
-}
-.deck .slide[data-effect="push"] {
-  transition: transform var(--dur, 600ms) cubic-bezier(.65, 0, .35, 1),
-              opacity calc(var(--dur, 600ms) * 0.6) ease;
-  transform: translate(var(--enter-x, 100%), var(--enter-y, 0));
-}
-.deck .slide[data-effect="push"].active { transform: translate(0, 0); }
-.deck .slide[data-effect="push"].exit {
-  transform: translate(var(--exit-x, -100%), var(--exit-y, 0));
-}
-.deck .slide[data-effect="zoom"] {
-  transition: transform var(--dur, 600ms) cubic-bezier(.34, 1.56, .64, 1),
-              opacity calc(var(--dur, 600ms) * 0.7) ease;
-  transform: scale(.94);
-}
-.deck .slide[data-effect="zoom"].active { transform: scale(1); }
-.deck .slide[data-effect="cut"] { transition: none; }
 
 .deck .deck-dots {
   position: absolute;
@@ -166,9 +144,5 @@
   .deck .deck-arrow { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .deck .slide,
-  .deck .deck-progress-fill {
-    transition: opacity .01s linear !important;
-    transform: none !important;
-  }
+  .deck .deck-progress-fill { transition: none; }
 }

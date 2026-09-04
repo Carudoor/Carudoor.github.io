@@ -66,6 +66,11 @@
     전환효과 추출기(`scripts/extract_transitions.py`)는 제거된 상태다.
     **자동 변환 파이프라인을 다시 만들지 말 것.**
 
+12. **슬라이드 전환 효과 기능도 삭제되었다.** 슬라이드는 효과 없이 즉시 전환된다.
+    fade/cut/zoom/push와 방향·속도를 지원하던 코드(`data-effect` CSS,
+    매니페스트의 `effect`/`direction`/`reverse`/`duration` 필드)는 전부 제거했고,
+    매니페스트는 파일명 배열로 단순해졌다. **전환 효과를 다시 넣지 말 것.**
+
 ---
 
 ## 3. 이미 해결됐거나 코드 문제가 아닌 것들 (다시 파헤치지 말 것)
@@ -127,13 +132,13 @@
 ```
 슬라이드를 로컬에서 PNG로 내보냄
   → slides/images/<덱이름>-<번호>.png 로 커밋
-  → slides/manifest.json 에 순서·전환 효과를 직접 기록
+  → slides/manifest.json 에 파일명을 순서대로 기록
   → slides.html / 홈페이지 인라인 카드가 매니페스트를 읽어 표시
 ```
 
-- `manifest.json`이 단일 진실 공급원: `{file, effect, direction, reverse, duration}`.
+- `manifest.json`은 **파일명 배열**이다: `["deck-1.png", "deck-2.png", ...]`.
   자동 생성이 아니라 **손으로 관리하는 파일**이다.
-- 뷰어가 지원하는 `effect`: `fade`(기본) / `cut` / `zoom` / `push`(+`direction`).
+- **전환 효과 기능은 없다.** 슬라이드는 효과 없이 즉시 전환된다(아래 2-12 참고).
 - 뷰어는 `mountSlideDeck(el, opts)` 하나로 두 곳에서 재사용. 인라인 카드는
   `dots:false, keyboard:false`(페이지 방향키를 가로채지 않도록), 전체화면은 전부 켬.
 - 현재 덱: `buipji-mid-*.png` 43장(1600×900). 원본 pptx가 178.8MB라

@@ -30,7 +30,7 @@ function mountSlideDeck(root, options) {
   var useProgress = opts.progress !== false;
   var useKeyboard = opts.keyboard === true;
   var emptyText = opts.emptyText ||
-    '아직 변환된 슬라이드가 없습니다. slides/ 폴더에 pptx를 추가해보세요.';
+    '아직 변환된 슬라이드가 없습니다. slides/ 폴더에 pptx 또는 pdf를 추가해보세요.';
 
   root.classList.add('deck');
   if (useDots) root.classList.add('has-dots');

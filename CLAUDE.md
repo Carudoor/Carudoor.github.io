@@ -21,9 +21,9 @@
 | `stl-core.js` | 두 페이지가 공유하는 STL 파서 + `fitGeometryToSize()` |
 | `slides-core.js` / `slides-core.css` | 슬라이드 덱 뷰어. `mountSlideDeck(el, opts)` 하나로 전체화면·인라인 카드 양쪽에서 재사용 |
 | `stl/` | STL 모델 파일들 + `manifest.json`(표시할 목록) + `README.md`(모델 추가법) |
-| `slides/` | **.pptx 원본**(사람이 관리) + `images/`·`manifest.json`(**자동 생성물, 직접 편집 금지**) |
+| `slides/` | **.pptx / .pdf 원본**(사람이 관리) + `images/`·`manifest.json`(**자동 생성물, 직접 편집 금지**) |
 | `scripts/extract_transitions.py` | pptx의 `<p:transition>`을 읽어 전환 효과·방향·속도를 매니페스트에 기록 |
-| `.github/workflows/build-slides.yml` | `slides/*.pptx` push 시 LibreOffice로 이미지 변환 → 매니페스트 생성 → 자동 커밋 |
+| `.github/workflows/build-slides.yml` | `slides/*.pptx`·`*.pdf` push 시 이미지 변환 → 매니페스트 생성 → 자동 커밋 |
 
 ---
 
@@ -117,11 +117,17 @@
 ### 4.2 PPTX 슬라이드 파이프라인
 
 ```
-slides/*.pptx push
-  → GitHub Actions (LibreOffice: pptx → pdf → png, python-pptx: 전환효과 파싱)
+slides/*.pptx 또는 *.pdf push
+  → GitHub Actions
+      pptx: LibreOffice로 pdf 변환 → pdftoppm → png, python-pptx로 전환효과 파싱
+      pdf : pdftoppm으로 바로 png (전환 정보가 없는 포맷이라 전부 기본 Fade)
   → slides/images/*.png + slides/manifest.json 자동 생성·커밋
   → GitHub Pages가 루트에서 서빙 → slides.html / 홈페이지 인라인 카드가 표시
 ```
+
+- 이미지 접두어에 **확장자를 포함**한다(`deck_pptx-1.png`, `report_pdf-1.png`).
+  같은 이름의 pptx와 pdf가 함께 있어도 이미지가 덮어써지지 않게 하기 위함이며,
+  **워크플로우와 `extract_transitions.py`가 이 규칙을 공유**하므로 한쪽만 바꾸면 깨진다.
 
 - **원본 패키지는 Pages를 `/docs`에서 서빙하는 전제였지만, 이 저장소는 루트에서
   서빙한다.** 그래서 경로를 `docs/` → `slides/`로 전부 바꿔서 통합했다.
@@ -169,7 +175,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 |---|---|
 | 마인드맵 항목/문구 변경 | `index.html` 스크립트 최상단 `data` 객체 |
 | 새 STL 모델 추가 | `stl/`에 파일 + `stl/manifest.json`에 파일명 |
-| 새 발표자료 추가 | `slides/`에 `.pptx` 넣고 push (나머지는 Actions가 자동) |
+| 새 발표자료 추가 | `slides/`에 `.pptx` 또는 `.pdf` 넣고 push (나머지는 Actions가 자동) |
 | 홈 색상 변경 | `index.html`의 `:root { --mm-* }` |
 | 뷰어 색상 변경 | `viewer.html`의 `:root { --cyan 등 }` |
 | 3D 미리보기에 띄울 모델 교체 | `index.html`의 `initModelPreview` 안 `fetch('stl/small-city.stl')` |
@@ -181,7 +187,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 - `stl/teil_1~4.stl`, `stl/innen.stl`이 **실제로 무슨 프로젝트인지 정보 없음.**
 - 학력사항에 재학/졸업 연도가 비어 있음 (사용자가 알려주지 않아 임의로 채우지 않음).
 - **대외활동·개인활동 본문이 플레이스홀더** 상태 — 실제 내용 필요.
-- **`slides/`에 아직 `.pptx`가 하나도 없음.** 그래서 슬라이드 뷰어는 "아직 등록된
+- **`slides/`에 아직 발표자료(.pptx/.pdf)가 하나도 없음.** 그래서 슬라이드 뷰어는 "아직 등록된
   발표자료가 없습니다" 안내만 표시됨. pptx를 처음 push할 때 GitHub Actions 워크플로우가
   정상 동작하는지(Actions 탭) 확인이 필요하다 — 아직 한 번도 실행된 적 없음.
 - 마인드맵에서 **이메일(연락처)이 사라진 상태** — 연락처 브랜치를 대외/개인활동으로

@@ -356,7 +356,7 @@
         { label: '프로젝트', render: function (body) {
           body.innerHTML =
             '<div class="deck-card"></div>' +
-            '<p style="margin:0 0 10px;">프로젝트 발표자료입니다. PowerPoint(.pptx)와 PDF를 지원하며, pptx에 지정된 전환 효과를 그대로 재현합니다.</p>' +
+            '<p style="margin:0 0 10px;">프로젝트 발표자료입니다.</p>' +
             '<a href="slides.html" class="mm-link-btn">전체 화면으로 보기 →</a>';
           mountSlideDeck(body.querySelector('.deck-card'), {
             manifestUrl: 'slides/manifest.json',
@@ -364,7 +364,7 @@
             dots: false,      // 좁은 카드에서는 점 네비게이션 생략
             progress: true,
             keyboard: false,  // 페이지 전체의 방향키를 가로채지 않도록
-            emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/ 폴더에 .pptx 또는 .pdf를 넣고 push하면 자동으로 변환되어 표시됩니다.'
+            emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/images/ 에 슬라이드 PNG를 넣고 slides/manifest.json에 등록하면 표시됩니다.'
           });
         }}
       ]},

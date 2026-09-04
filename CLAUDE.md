@@ -17,13 +17,11 @@
 |---|---|
 | `index.html` | **홈페이지 = 인터랙티브 마인드맵 그 자체.** 콘텐츠·레이아웃·상호작용 전부 여기 인라인 |
 | `viewer.html` | 전체화면 STL 3D 뷰어 (홀로그램 스타일 HUD + 모델 목록 대시보드) |
-| `slides.html` | 전체화면 PPTX 슬라이드 뷰어 |
+| `slides.html` | 전체화면 슬라이드 뷰어 |
 | `stl-core.js` | 두 페이지가 공유하는 STL 파서 + `fitGeometryToSize()` |
 | `slides-core.js` / `slides-core.css` | 슬라이드 덱 뷰어. `mountSlideDeck(el, opts)` 하나로 전체화면·인라인 카드 양쪽에서 재사용 |
 | `stl/` | STL 모델 파일들 + `manifest.json`(표시할 목록) + `README.md`(모델 추가법) |
-| `slides/` | **.pptx / .pdf 원본**(사람이 관리) + `images/`·`manifest.json`(**자동 생성물, 직접 편집 금지**) |
-| `scripts/extract_transitions.py` | pptx의 `<p:transition>`을 읽어 전환 효과·방향·속도를 매니페스트에 기록 |
-| `.github/workflows/build-slides.yml` | `slides/*.pptx`·`*.pdf` push 시 이미지 변환 → 매니페스트 생성 → 자동 커밋 |
+| `slides/` | 슬라이드 **PNG**(`images/`) + `manifest.json`(순서·전환 효과). **둘 다 사람이 직접 관리** |
 
 ---
 
@@ -60,6 +58,13 @@
 10. **"연락처" 브랜치는 "대외/개인활동"(세부: 대외활동·개인활동)으로 바뀌었다.**
     이 변경으로 마인드맵에서 이메일이 사라졌음 — 의도된 것인지 확인 필요.
     두 세부 항목의 본문은 아직 **플레이스홀더**라 실제 내용으로 채워야 한다.
+
+11. **발표자료는 PNG만 저장소에 넣는다. pptx·pdf 원본은 올리지 않는다.**
+    원래는 `slides/`에 원본을 넣으면 GitHub Actions가 LibreOffice·poppler로
+    이미지를 만들어 커밋하는 파이프라인이 있었는데, **용량 문제로 사용자가
+    삭제를 요청**했다. 워크플로우(`.github/workflows/build-slides.yml`)와
+    전환효과 추출기(`scripts/extract_transitions.py`)는 제거된 상태다.
+    **자동 변환 파이프라인을 다시 만들지 말 것.**
 
 ---
 
@@ -114,43 +119,32 @@
 
 - 리사이즈 시 `layoutLeaderLines()`가 스파인·점을 다시 배치하고, 떠 있는 강조선도 `refreshHighlightGeometry()`로 새 좌표에 맞춘다.
 
-### 4.2 PPTX 슬라이드 파이프라인
+### 4.2 슬라이드(발표자료)
+
+**원본(pptx/pdf)은 저장소에 넣지 않는다. PNG만 커밋한다.**
+용량 때문에 사용자가 명시적으로 정한 방침이다(아래 2-11 참고).
 
 ```
-slides/*.pptx 또는 *.pdf push
-  → GitHub Actions
-      pptx: LibreOffice로 pdf 변환 → pdftoppm → png, python-pptx로 전환효과 파싱
-      pdf : pdftoppm으로 바로 png (전환 정보가 없는 포맷이라 전부 기본 Fade)
-  → slides/images/*.png + slides/manifest.json 자동 생성·커밋
-  → GitHub Pages가 루트에서 서빙 → slides.html / 홈페이지 인라인 카드가 표시
+슬라이드를 로컬에서 PNG로 내보냄
+  → slides/images/<덱이름>-<번호>.png 로 커밋
+  → slides/manifest.json 에 순서·전환 효과를 직접 기록
+  → slides.html / 홈페이지 인라인 카드가 매니페스트를 읽어 표시
 ```
 
-- 이미지 접두어에 **확장자를 포함**한다(`deck_pptx-1.png`, `report_pdf-1.png`).
-  같은 이름의 pptx와 pdf가 함께 있어도 이미지가 덮어써지지 않게 하기 위함이며,
-  **워크플로우와 `extract_transitions.py`가 이 규칙을 공유**하므로 한쪽만 바꾸면 깨진다.
-
-- **GitHub은 파일당 100MB가 하드 리밋**이라, 그보다 큰 원본은 저장소에 못 넣는다.
-  그런 덱은 **로컬에서 PNG로 변환해 이미지만** 커밋한다:
-  - 이미지: `slides/images/<이름>_manual-N.png`
-  - 매니페스트 항목: `slides/manual.json` (빌드 시 자동 생성분 뒤에 병합됨)
-  - 워크플로우는 이미지를 통째로 지우지 않고 **이번에 다시 만들 접두어만** 지우므로
-    `_manual` 이미지는 살아남는다. 이 규칙을 깨면 수동 덱이 조용히 사라진다.
-  - 실제 사례: `buipji-mid_manual-*.png` 43장. 원본 pptx가 178.8MB라 이 PC의
-    PowerShell + PowerPoint COM(`Presentation.Export`)으로 1600×900 PNG로 변환(21.8MB).
-    원본에 전환 효과가 없어서 전부 기본 Fade.
-  - 참고: 이 PC에는 LibreOffice·poppler가 없다. **PowerPoint COM은 쓸 수 있지만
-    PDF→이미지 변환 수단은 없다.** PDF는 Actions(poppler)로 변환하거나 원본을 줄여야 한다.
-  - COM에 한글 경로/파일명을 인라인으로 넘기면 인코딩이 깨져 `FileNotFoundException`이
-    난다. ASCII 경로로 복사한 뒤 다루면 문제없다.
-
-- **원본 패키지는 Pages를 `/docs`에서 서빙하는 전제였지만, 이 저장소는 루트에서
-  서빙한다.** 그래서 경로를 `docs/` → `slides/`로 전부 바꿔서 통합했다.
-  **Pages 소스를 `/docs`로 바꾸면 기존 홈페이지가 통째로 죽는다 — 절대 바꾸지 말 것.**
-- 매니페스트 한 개가 단일 진실 공급원: `{file, effect, direction, reverse, duration}`.
-- 재현 불가한 3D 계열 전환(Morph/Cube/Vortex 등)은 자동으로 Fade로 대체됨
-  (`EFFECT_MAP` in `scripts/extract_transitions.py`).
+- `manifest.json`이 단일 진실 공급원: `{file, effect, direction, reverse, duration}`.
+  자동 생성이 아니라 **손으로 관리하는 파일**이다.
+- 뷰어가 지원하는 `effect`: `fade`(기본) / `cut` / `zoom` / `push`(+`direction`).
 - 뷰어는 `mountSlideDeck(el, opts)` 하나로 두 곳에서 재사용. 인라인 카드는
   `dots:false, keyboard:false`(페이지 방향키를 가로채지 않도록), 전체화면은 전부 켬.
+- 현재 덱: `buipji-mid-*.png` 43장(1600×900). 원본 pptx가 178.8MB라
+  PowerShell + PowerPoint COM(`Presentation.Export`)으로 변환했다(21.8MB).
+
+**PNG 변환이 필요할 때 이 PC에서 쓸 수 있는 것:**
+- PowerPoint COM(`Presentation.Export(폴더, "PNG", 가로, 세로)`) — pptx → PNG 가능
+- **LibreOffice·poppler는 없다.** 즉 **PDF → 이미지 변환 수단이 없다.**
+  PDF만 있는 자료는 사용자가 직접 이미지로 내보내 주어야 한다.
+- COM에 한글 경로/파일명을 인라인으로 넘기면 인코딩이 깨져 `FileNotFoundException`이
+  난다. ASCII 경로로 복사한 뒤 다루면 문제없다.
 
 ### 4.3 STL 관련
 
@@ -189,7 +183,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 |---|---|
 | 마인드맵 항목/문구 변경 | `index.html` 스크립트 최상단 `data` 객체 |
 | 새 STL 모델 추가 | `stl/`에 파일 + `stl/manifest.json`에 파일명 |
-| 새 발표자료 추가 | `slides/`에 `.pptx` 또는 `.pdf` 넣고 push (나머지는 Actions가 자동) |
+| 새 발표자료 추가 | 슬라이드를 PNG로 내보내 `slides/images/`에 넣고 `slides/manifest.json`에 등록 |
 | 홈 색상 변경 | `index.html`의 `:root { --mm-* }` |
 | 뷰어 색상 변경 | `viewer.html`의 `:root { --cyan 등 }` |
 | 3D 미리보기에 띄울 모델 교체 | `index.html`의 `initModelPreview` 안 `fetch('stl/small-city.stl')` |
@@ -201,8 +195,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 - `stl/teil_1~4.stl`, `stl/innen.stl`이 **실제로 무슨 프로젝트인지 정보 없음.**
 - 학력사항에 재학/졸업 연도가 비어 있음 (사용자가 알려주지 않아 임의로 채우지 않음).
 - **대외활동·개인활동 본문이 플레이스홀더** 상태 — 실제 내용 필요.
-- `slides/`에 pptx/pdf **원본은 없다**(수동 변환 덱만 있음). 그래서 **GitHub Actions 워크플로우는 아직 한 번도 실행된 적이 없다** — 첫 원본을 push할 때 Actions 탭에서 동작 확인 필요. (이전 메모: "아직 등록된
-  발표자료가 없습니다" 안내만 표시됨. pptx를 처음 push할 때 GitHub Actions 워크플로우가
-  정상 동작하는지(Actions 탭) 확인이 필요하다 — 아직 한 번도 실행된 적 없음.
 - 마인드맵에서 **이메일(연락처)이 사라진 상태** — 연락처 브랜치를 대외/개인활동으로
   교체하면서 생긴 결과. 이메일을 푸터 등 다른 곳에 남길지 확인 필요.
+- `부입지 최종발표.pdf`(51.3MB)는 **아직 올리지 않았다.** 이 PC에는 PDF를 이미지로
+  바꿀 도구가 없어서, 올리려면 사용자가 직접 PNG로 내보내 주어야 한다.

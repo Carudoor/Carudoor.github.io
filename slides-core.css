@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------
-   PPTX 슬라이드 덱 스타일 — slides.html(전체 화면)과 홈페이지의
+   슬라이드 덱 스타일 — slides.html(전체 화면)과 홈페이지의
    인라인 카드가 함께 쓴다. 높이/모서리 등 바깥 상자 속성은 host가
    .deck 에 직접 지정한다 (여기서는 정하지 않음).
    --------------------------------------------------------------- */
@@ -67,8 +67,8 @@
   border-radius: 2px;
 }
 
-/* --enter-x / --enter-y / --exit-x / --exit-y / --dur 는 pptx에 실제로
-   저장된 전환 정보를 바탕으로 슬라이드마다 JS가 지정한다. */
+/* --enter-x / --enter-y / --exit-x / --exit-y / --dur 는 manifest.json에 적힌
+   전환 정보를 바탕으로 슬라이드마다 JS가 지정한다. */
 .deck .slide[data-effect="fade"] {
   transition: opacity var(--dur, 600ms) ease;
 }

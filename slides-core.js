@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// PPTX 슬라이드 덱 뷰어 — slides.html(전체 화면)과 홈페이지 마인드맵의
+// 슬라이드 덱 뷰어 — slides.html(전체 화면)과 홈페이지 마인드맵의
 // 인라인 카드가 공유한다. 필요한 마크업은 전부 여기서 만들어 붙이므로,
 // host는 빈 요소 하나만 넘기면 된다.
 //
@@ -13,7 +13,7 @@
 //   });
 // ---------------------------------------------------------------
 
-// pptx의 dir 속성(l/r/u/d 및 대각선) -> 이동 벡터
+// manifest의 direction 값(l/r/u/d 및 대각선) -> 이동 벡터
 var DECK_DIR_VECTOR = {
   l:  [1, 0],   r:  [-1, 0],
   u:  [0, 1],   d:  [0, -1],
@@ -30,7 +30,7 @@ function mountSlideDeck(root, options) {
   var useProgress = opts.progress !== false;
   var useKeyboard = opts.keyboard === true;
   var emptyText = opts.emptyText ||
-    '아직 변환된 슬라이드가 없습니다. slides/ 폴더에 pptx 또는 pdf를 추가해보세요.';
+    '아직 등록된 슬라이드가 없습니다. slides/images/ 에 PNG를 넣고 slides/manifest.json에 추가해보세요.';
 
   root.classList.add('deck');
   if (useDots) root.classList.add('has-dots');

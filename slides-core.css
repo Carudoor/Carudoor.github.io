@@ -67,6 +67,41 @@
 }
 
 
+/* 덱(발표자료)이 2개 이상일 때만 보이는 선택 탭 */
+.deck .deck-tabs {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 70;
+  max-width: 80%;
+  overflow-x: auto;
+}
+.deck .deck-tabs[hidden] { display: none; }
+.deck .deck-tab {
+  font: inherit;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: rgba(242, 240, 236, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--deck-line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.deck .deck-tab:hover { color: var(--deck-paper); }
+.deck .deck-tab.active {
+  color: var(--deck-stage);
+  background: var(--deck-accent);
+  border-color: var(--deck-accent);
+}
+.deck .deck-tab:focus-visible {
+  outline: 2px solid var(--deck-accent);
+  outline-offset: 2px;
+}
+
 .deck .deck-dots {
   position: absolute;
   right: 14px;

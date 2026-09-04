@@ -44,11 +44,11 @@
 <script>
   mountSlideDeck(document.getElementById('deck'), {
     manifestUrl: 'slides/manifest.json',
-    imageBase: 'slides/images/',
+    basePath: 'slides/',
     dots: true,
     progress: true,
     keyboard: true,
-    emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/images/ 에 슬라이드 PNG를 넣고 slides/manifest.json에 등록하면 여기에 표시됩니다.'
+    emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/ 에 덱 폴더를 만들어 PNG를 넣고 slides/manifest.json에 등록하면 여기에 표시됩니다.'
   });
 </script>
 

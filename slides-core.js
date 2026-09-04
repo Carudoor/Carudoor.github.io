@@ -5,27 +5,30 @@
 //
 //   mountSlideDeck(el, {
 //     manifestUrl: 'slides/manifest.json',
-//     imageBase:   'slides/images/',
+//     basePath:    'slides/',   // 덱 폴더들이 들어있는 위치
 //     dots:     true,   // 우측 점 네비게이션
 //     progress: true,   // 상단 진행 바
 //     keyboard: true,   // ← / → / Space
+//     tabs:     true,   // 덱이 2개 이상일 때 상단 덱 선택 탭
 //     emptyText: '...'  // 슬라이드가 없을 때 보여줄 안내
 //   });
 //
-// 매니페스트는 이미지 파일명을 순서대로 담은 배열이다:
-//   ["deck-1.png", "deck-2.png", ...]
+// 매니페스트는 발표자료(덱) 목록이다. 덱 하나가 폴더 하나에 대응하고,
+// 그 안의 이미지는 1.png, 2.png … 순번으로 저장한다:
+//   [ { "name": "표시할 이름", "dir": "폴더명", "count": 43 } ]
 // ---------------------------------------------------------------
 
 function mountSlideDeck(root, options) {
   if (!root) return;
   var opts = options || {};
   var manifestUrl = opts.manifestUrl || 'slides/manifest.json';
-  var imageBase = opts.imageBase || 'slides/images/';
+  var basePath = opts.basePath || 'slides/';
   var useDots = opts.dots !== false;
   var useProgress = opts.progress !== false;
   var useKeyboard = opts.keyboard === true;
+  var useTabs = opts.tabs !== false;
   var emptyText = opts.emptyText ||
-    '아직 등록된 슬라이드가 없습니다. slides/images/ 에 PNG를 넣고 slides/manifest.json에 추가해보세요.';
+    '아직 등록된 슬라이드가 없습니다. slides/ 에 덱 폴더를 만들고 slides/manifest.json에 추가해보세요.';
 
   root.classList.add('deck');
   if (useDots) root.classList.add('has-dots');
@@ -43,6 +46,14 @@ function mountSlideDeck(root, options) {
     progressFill.className = 'deck-progress-fill';
     progress.appendChild(progressFill);
     root.appendChild(progress);
+  }
+
+  var tabsWrap = null;
+  if (useTabs) {
+    tabsWrap = document.createElement('div');
+    tabsWrap.className = 'deck-tabs';
+    tabsWrap.hidden = true; // 덱이 2개 이상일 때만 노출
+    root.appendChild(tabsWrap);
   }
 
   var dotsWrap = null;
@@ -70,9 +81,25 @@ function mountSlideDeck(root, options) {
   countEl.hidden = true;
   root.appendChild(countEl);
 
+  var decks = [];
   var slides = [];
   var dots = [];
   var current = 0;
+
+  // 덱 하나를 이미지 경로 배열로 바꾼다.
+  // count가 있으면 1.png … N.png 로 만들고, files 배열이 있으면 그대로 쓴다.
+  function deckImages(deck) {
+    var dir = basePath + deck.dir + '/';
+    if (Array.isArray(deck.files)) {
+      return deck.files.map(function (f) { return dir + f; });
+    }
+    var out = [];
+    var ext = deck.ext || 'png';
+    for (var i = 1; i <= (deck.count || 0); i++) {
+      out.push(dir + i + '.' + ext);
+    }
+    return out;
+  }
 
   fetch(manifestUrl, { cache: 'no-store' })
     .then(function (res) {
@@ -80,11 +107,15 @@ function mountSlideDeck(root, options) {
       return res.json();
     })
     .then(function (entries) {
-      if (!entries || entries.length === 0) {
+      decks = (entries || []).filter(function (d) {
+        return d && d.dir && (d.count > 0 || Array.isArray(d.files));
+      });
+      if (decks.length === 0) {
         statusEl.textContent = emptyText;
         return;
       }
-      buildSlides(entries);
+      if (tabsWrap && decks.length > 1) buildTabs();
+      showDeck(0);
       statusEl.classList.add('hidden');
       prevBtn.hidden = false;
       nextBtn.hidden = false;
@@ -95,17 +126,37 @@ function mountSlideDeck(root, options) {
       statusEl.textContent = '슬라이드를 불러오지 못했습니다: ' + err.message;
     });
 
-  function buildSlides(entries) {
-    entries.forEach(function (entry, i) {
-      // 파일명 문자열이 기본. 예전 형식({file: ...})도 조용히 받아준다.
-      var file = typeof entry === 'string' ? entry : (entry && entry.file);
-      if (!file) return;
+  function buildTabs() {
+    tabsWrap.hidden = false;
+    decks.forEach(function (deck, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'deck-tab' + (i === 0 ? ' active' : '');
+      b.textContent = deck.name || deck.dir;
+      b.addEventListener('click', function () {
+        Array.prototype.forEach.call(tabsWrap.children, function (el, idx) {
+          el.classList.toggle('active', idx === i);
+        });
+        showDeck(i);
+      });
+      tabsWrap.appendChild(b);
+    });
+  }
 
+  function showDeck(deckIndex) {
+    // 이전 덱의 슬라이드·점을 걷어낸다
+    slides.forEach(function (s) { s.remove(); });
+    dots.forEach(function (d) { d.remove(); });
+    slides = [];
+    dots = [];
+    current = 0;
+
+    deckImages(decks[deckIndex]).forEach(function (src, i) {
       var section = document.createElement('section');
       section.className = 'slide';
 
       var img = document.createElement('img');
-      img.src = imageBase + file;
+      img.src = src;
       img.alt = '슬라이드 ' + (i + 1);
       img.loading = i < 2 ? 'eager' : 'lazy';
       section.appendChild(img);

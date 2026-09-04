@@ -21,7 +21,7 @@
 | `stl-core.js` | 두 페이지가 공유하는 STL 파서 + `fitGeometryToSize()` |
 | `slides-core.js` / `slides-core.css` | 슬라이드 덱 뷰어. `mountSlideDeck(el, opts)` 하나로 전체화면·인라인 카드 양쪽에서 재사용 |
 | `stl/` | STL 모델 파일들 + `manifest.json`(표시할 목록) + `README.md`(모델 추가법) |
-| `slides/` | 슬라이드 **PNG**(`images/`) + `manifest.json`(순서·전환 효과). **둘 다 사람이 직접 관리** |
+| `slides/` | 발표자료. **덱마다 폴더 하나**(`<덱>/1.png …`) + `manifest.json`(덱 목록). 둘 다 직접 관리 |
 
 ---
 
@@ -68,8 +68,12 @@
 
 12. **슬라이드 전환 효과 기능도 삭제되었다.** 슬라이드는 효과 없이 즉시 전환된다.
     fade/cut/zoom/push와 방향·속도를 지원하던 코드(`data-effect` CSS,
-    매니페스트의 `effect`/`direction`/`reverse`/`duration` 필드)는 전부 제거했고,
-    매니페스트는 파일명 배열로 단순해졌다. **전환 효과를 다시 넣지 말 것.**
+    매니페스트의 `effect`/`direction`/`reverse`/`duration` 필드)는 전부 제거했다.
+    **전환 효과를 다시 넣지 말 것.**
+
+13. **발표자료는 덱마다 폴더를 따로 둔다.** 이미지를 `slides/images/`에 몰아넣지
+    않고 `slides/<덱이름>/1.png, 2.png …` 형태로 분리한다. `manifest.json`은
+    파일 목록이 아니라 **덱 목록**이다.
 
 ---
 
@@ -129,19 +133,23 @@
 **원본(pptx/pdf)은 저장소에 넣지 않는다. PNG만 커밋한다.**
 용량 때문에 사용자가 명시적으로 정한 방침이다(아래 2-11 참고).
 
+**발표자료 하나 = 폴더 하나.** 이미지는 폴더 안에서 `1.png`, `2.png` … 순번.
+
 ```
-슬라이드를 로컬에서 PNG로 내보냄
-  → slides/images/<덱이름>-<번호>.png 로 커밋
-  → slides/manifest.json 에 파일명을 순서대로 기록
-  → slides.html / 홈페이지 인라인 카드가 매니페스트를 읽어 표시
+slides/
+  manifest.json          ← 덱 목록 (손으로 관리)
+  buipji-mid/1.png … 43.png
+  <다른덱>/1.png …
 ```
 
-- `manifest.json`은 **파일명 배열**이다: `["deck-1.png", "deck-2.png", ...]`.
-  자동 생성이 아니라 **손으로 관리하는 파일**이다.
+- `manifest.json`은 **덱 목록**이다:
+  `[ { "name": "표시명", "dir": "폴더명", "count": 43 } ]`
+  `count` 대신 `files: ["a.png", ...]` 로 파일명을 직접 지정할 수도 있다.
+- 덱이 **2개 이상이면 상단에 덱 선택 탭**이 자동으로 나타난다(1개면 숨김).
 - **전환 효과 기능은 없다.** 슬라이드는 효과 없이 즉시 전환된다(아래 2-12 참고).
 - 뷰어는 `mountSlideDeck(el, opts)` 하나로 두 곳에서 재사용. 인라인 카드는
   `dots:false, keyboard:false`(페이지 방향키를 가로채지 않도록), 전체화면은 전부 켬.
-- 현재 덱: `buipji-mid-*.png` 43장(1600×900). 원본 pptx가 178.8MB라
+- 현재 덱: `slides/buipji-mid/` 43장(1600×900). 원본 pptx가 178.8MB라
   PowerShell + PowerPoint COM(`Presentation.Export`)으로 변환했다(21.8MB).
 
 **PNG 변환이 필요할 때 이 PC에서 쓸 수 있는 것:**
@@ -188,7 +196,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 |---|---|
 | 마인드맵 항목/문구 변경 | `index.html` 스크립트 최상단 `data` 객체 |
 | 새 STL 모델 추가 | `stl/`에 파일 + `stl/manifest.json`에 파일명 |
-| 새 발표자료 추가 | 슬라이드를 PNG로 내보내 `slides/images/`에 넣고 `slides/manifest.json`에 등록 |
+| 새 발표자료 추가 | PNG로 내보내 `slides/<덱이름>/1.png…` 로 넣고 `slides/manifest.json`에 덱 한 줄 추가 |
 | 홈 색상 변경 | `index.html`의 `:root { --mm-* }` |
 | 뷰어 색상 변경 | `viewer.html`의 `:root { --cyan 등 }` |
 | 3D 미리보기에 띄울 모델 교체 | `index.html`의 `initModelPreview` 안 `fetch('stl/small-city.stl')` |

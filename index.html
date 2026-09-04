@@ -360,11 +360,11 @@
             '<a href="slides.html" class="mm-link-btn">전체 화면으로 보기 →</a>';
           mountSlideDeck(body.querySelector('.deck-card'), {
             manifestUrl: 'slides/manifest.json',
-            imageBase: 'slides/images/',
+            basePath: 'slides/',
             dots: false,      // 좁은 카드에서는 점 네비게이션 생략
             progress: true,
             keyboard: false,  // 페이지 전체의 방향키를 가로채지 않도록
-            emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/images/ 에 슬라이드 PNG를 넣고 slides/manifest.json에 등록하면 표시됩니다.'
+            emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/ 에 덱 폴더를 만들어 PNG를 넣고 slides/manifest.json에 등록하면 표시됩니다.'
           });
         }}
       ]},

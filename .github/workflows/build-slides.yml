@@ -1,0 +1,54 @@
+name: Build slides from PPTX
+
+on:
+  push:
+    paths:
+      - 'slides/**.pptx'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install LibreOffice and poppler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice poppler-utils
+
+      - name: Convert PPTX files to slide images
+        run: |
+          set -e
+          mkdir -p slides/images
+          rm -f slides/images/*.png
+          shopt -s nullglob
+          for f in slides/*.pptx; do
+            name=$(basename "$f" .pptx)
+            echo "Converting $f"
+            soffice --headless --norestore --convert-to pdf --outdir /tmp "$f"
+            pdftoppm -png -r 150 "/tmp/${name}.pdf" "slides/images/${name}"
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install python-pptx
+        run: pip install python-pptx
+
+      - name: Extract native transitions and build manifest
+        run: python3 scripts/extract_transitions.py
+
+      - name: Commit generated images
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add slides/images slides/manifest.json
+          git diff --staged --quiet || git commit -m "Auto-build slide images from PPTX [skip ci]"
+          git push

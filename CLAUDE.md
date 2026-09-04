@@ -17,8 +17,13 @@
 |---|---|
 | `index.html` | **홈페이지 = 인터랙티브 마인드맵 그 자체.** 콘텐츠·레이아웃·상호작용 전부 여기 인라인 |
 | `viewer.html` | 전체화면 STL 3D 뷰어 (홀로그램 스타일 HUD + 모델 목록 대시보드) |
+| `slides.html` | 전체화면 PPTX 슬라이드 뷰어 |
 | `stl-core.js` | 두 페이지가 공유하는 STL 파서 + `fitGeometryToSize()` |
+| `slides-core.js` / `slides-core.css` | 슬라이드 덱 뷰어. `mountSlideDeck(el, opts)` 하나로 전체화면·인라인 카드 양쪽에서 재사용 |
 | `stl/` | STL 모델 파일들 + `manifest.json`(표시할 목록) + `README.md`(모델 추가법) |
+| `slides/` | **.pptx 원본**(사람이 관리) + `images/`·`manifest.json`(**자동 생성물, 직접 편집 금지**) |
+| `scripts/extract_transitions.py` | pptx의 `<p:transition>`을 읽어 전환 효과·방향·속도를 매니페스트에 기록 |
+| `.github/workflows/build-slides.yml` | `slides/*.pptx` push 시 LibreOffice로 이미지 변환 → 매니페스트 생성 → 자동 커밋 |
 
 ---
 
@@ -47,6 +52,14 @@
 7. **진단용 HUD(FPS / EDGE SEGS)는 제거된 상태를 유지한다.** 디버깅 후 삭제 요청받음.
 
 8. **매 변경은 로컬 커밋 후 push 여부를 확인받고 진행한다.** (사용자가 "push"라고 답하면 그때 push)
+
+9. **마인드맵 "3D 모델 / 프로젝트 · 프로젝트" 항목은 PPTX 발표자료 뷰어다.**
+   원래 CAD 프로젝트를 텍스트로 설명하던 자리였는데, 사용자가 PPT 띄우는
+   기능으로 대치하라고 요청함.
+
+10. **"연락처" 브랜치는 "대외/개인활동"(세부: 대외활동·개인활동)으로 바뀌었다.**
+    이 변경으로 마인드맵에서 이메일이 사라졌음 — 의도된 것인지 확인 필요.
+    두 세부 항목의 본문은 아직 **플레이스홀더**라 실제 내용으로 채워야 한다.
 
 ---
 
@@ -83,7 +96,7 @@
       ]}
   ]}
   ```
-  현재 브랜치: **소개**(자기소개·학력사항) / **3D 모델 · 프로젝트**(3D 모델 뷰어·프로젝트) / **연락처**(이메일).
+  현재 브랜치: **소개**(자기소개·학력사항) / **3D 모델 / 프로젝트**(3D 모델 뷰어·프로젝트=발표자료 덱) / **대외/개인활동**(대외활동·개인활동).
 
 - **`render(body)`는 섹션이 문서에 붙은 뒤에 호출된다.** 순서를 바꾸면 안 됨 — 3D 미리보기가 `clientWidth/clientHeight`를 읽는데, 아직 DOM에 붙지 않은 노드는 **0**이라 캔버스가 0×0으로 생성되는 버그가 있었음.
 
@@ -101,7 +114,25 @@
 
 - 리사이즈 시 `layoutLeaderLines()`가 스파인·점을 다시 배치하고, 떠 있는 강조선도 `refreshHighlightGeometry()`로 새 좌표에 맞춘다.
 
-### 4.2 STL 관련
+### 4.2 PPTX 슬라이드 파이프라인
+
+```
+slides/*.pptx push
+  → GitHub Actions (LibreOffice: pptx → pdf → png, python-pptx: 전환효과 파싱)
+  → slides/images/*.png + slides/manifest.json 자동 생성·커밋
+  → GitHub Pages가 루트에서 서빙 → slides.html / 홈페이지 인라인 카드가 표시
+```
+
+- **원본 패키지는 Pages를 `/docs`에서 서빙하는 전제였지만, 이 저장소는 루트에서
+  서빙한다.** 그래서 경로를 `docs/` → `slides/`로 전부 바꿔서 통합했다.
+  **Pages 소스를 `/docs`로 바꾸면 기존 홈페이지가 통째로 죽는다 — 절대 바꾸지 말 것.**
+- 매니페스트 한 개가 단일 진실 공급원: `{file, effect, direction, reverse, duration}`.
+- 재현 불가한 3D 계열 전환(Morph/Cube/Vortex 등)은 자동으로 Fade로 대체됨
+  (`EFFECT_MAP` in `scripts/extract_transitions.py`).
+- 뷰어는 `mountSlideDeck(el, opts)` 하나로 두 곳에서 재사용. 인라인 카드는
+  `dots:false, keyboard:false`(페이지 방향키를 가로채지 않도록), 전체화면은 전부 켬.
+
+### 4.3 STL 관련
 
 - **STL은 Y축이 위(three.js 규약)여야 한다.**
   CAD 관례대로 Z-up으로 만들면 모델이 옆으로 누워서 렌더링됨. `small-city.stl`을 이 이유로 Y-up으로 다시 생성한 적 있음. 새로 생성하는 모델도 Y-up으로 만들 것.
@@ -112,14 +143,14 @@
 
 - fetch 캐시 정책: **`manifest.json`만 `cache:'no-store'`** (새 항목 즉시 반영), 모델 파일은 브라우저 캐시 사용 (파일명이 곧 버전).
 
-### 4.3 `viewer.html`
+### 4.4 `viewer.html`
 
 - `manifest.json`을 읽어 목록을 만들고, 첫 모델을 자동 로드. 2개 이상이면 오른쪽 대시보드가 열림.
 - 조작: 드래그(회전) / 휠(줌) / Shift+드래그(팬) / `SPACE`(자동회전) / `R`(초기화) / **`D`(대시보드)**
   - `D`인 이유: 예전엔 `Tab`이었는데 `Tab`을 가로채면 키보드 탐색이 불가능해져서 변경함. **다시 `Tab`으로 바꾸지 말 것.**
 - 한 번 읽은 STL은 `bufferCache`에 보관해 모델 전환이 즉시 이뤄짐.
 
-### 4.4 접근성 관련 의도적 선택
+### 4.5 접근성 관련 의도적 선택
 
 - 본문 헤더는 `<h3>` 안에 `<button>`을 중첩한 구조. `<h3 role="button">`로 되돌리면 제목 시맨틱이 사라지고 `aria-label`이 제목 텍스트를 덮어써서 스크린리더가 모든 헤더를 똑같이 읽음.
 - `prefers-reduced-motion`에서 JS 애니메이션 + CSS 트랜지션 둘 다 꺼짐. 뷰어는 자동회전이 꺼진 상태로 시작.
@@ -138,6 +169,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 |---|---|
 | 마인드맵 항목/문구 변경 | `index.html` 스크립트 최상단 `data` 객체 |
 | 새 STL 모델 추가 | `stl/`에 파일 + `stl/manifest.json`에 파일명 |
+| 새 발표자료 추가 | `slides/`에 `.pptx` 넣고 push (나머지는 Actions가 자동) |
 | 홈 색상 변경 | `index.html`의 `:root { --mm-* }` |
 | 뷰어 색상 변경 | `viewer.html`의 `:root { --cyan 등 }` |
 | 3D 미리보기에 띄울 모델 교체 | `index.html`의 `initModelPreview` 안 `fetch('stl/small-city.stl')` |
@@ -146,5 +178,11 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 
 ## 6. 아직 안 된 것 / 확인 필요
 
-- `stl/teil_1~4.stl`, `stl/innen.stl`이 **실제로 무슨 프로젝트인지 정보 없음.** 그래서 마인드맵 "프로젝트" 항목에는 설명 가능한 `WWII Japanese Dagger`, `Small City`만 적혀 있음. 내용을 알게 되면 추가할 것.
+- `stl/teil_1~4.stl`, `stl/innen.stl`이 **실제로 무슨 프로젝트인지 정보 없음.**
 - 학력사항에 재학/졸업 연도가 비어 있음 (사용자가 알려주지 않아 임의로 채우지 않음).
+- **대외활동·개인활동 본문이 플레이스홀더** 상태 — 실제 내용 필요.
+- **`slides/`에 아직 `.pptx`가 하나도 없음.** 그래서 슬라이드 뷰어는 "아직 등록된
+  발표자료가 없습니다" 안내만 표시됨. pptx를 처음 push할 때 GitHub Actions 워크플로우가
+  정상 동작하는지(Actions 탭) 확인이 필요하다 — 아직 한 번도 실행된 적 없음.
+- 마인드맵에서 **이메일(연락처)이 사라진 상태** — 연락처 브랜치를 대외/개인활동으로
+  교체하면서 생긴 결과. 이메일을 푸터 등 다른 곳에 남길지 확인 필요.

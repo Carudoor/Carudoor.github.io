@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>이용수</title>
-<meta name="description" content="이용수 개인 홈페이지 — 단국대학교 도시계획학과, STL CAD 프로젝트와 3D 모델 뷰어.">
+<meta name="description" content="이용수 개인 홈페이지 — 단국대학교 도시계획학과, STL CAD 모델 3D 뷰어와 프로젝트 발표자료.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%232c2c2a'/><circle cx='16' cy='16' r='5' fill='%232563eb'/></svg>">
+<link rel="stylesheet" href="slides-core.css">
 <style>
   :root {
     --mm-text: #1f2937;
@@ -249,6 +250,16 @@
     pointer-events: none;
   }
 
+  /* "프로젝트" 항목 안에 들어가는 슬라이드 덱. 바깥 상자 크기만 정하고
+     내부 스타일은 slides-core.css가 담당한다. */
+  .deck-card {
+    width: 100%;
+    height: 300px;
+    border-radius: 8px;
+    border: 1px solid var(--mm-line);
+    margin-bottom: 12px;
+  }
+
   footer {
     width: 100%;
     max-width: 680px;
@@ -299,15 +310,13 @@
     <section class="mm-section">
       <h3 class="mm-section-header">3D 모델 / 프로젝트</h3>
       <div class="mm-section-body">
-        STL로 제작한 CAD 프로젝트(WWII Japanese Dagger, Small City 등)를
-        <a href="viewer.html" class="mm-inline-link">3D 뷰어</a>에서 볼 수 있습니다.
+        STL로 제작한 CAD 모델은 <a href="viewer.html" class="mm-inline-link">3D 뷰어</a>에서,
+        프로젝트 발표자료는 <a href="slides.html" class="mm-inline-link">슬라이드 뷰어</a>에서 볼 수 있습니다.
       </div>
     </section>
     <section class="mm-section">
-      <h3 class="mm-section-header">연락처</h3>
-      <div class="mm-section-body">
-        <a href="mailto:yongsoo.b.lee@gmail.com" class="mm-inline-link">yongsoo.b.lee@gmail.com</a>
-      </div>
+      <h3 class="mm-section-header">대외/개인활동</h3>
+      <div class="mm-section-body">대외활동 및 개인활동 내용을 준비 중입니다.</div>
     </section>
   </div>
 </noscript>
@@ -319,6 +328,7 @@
      아래 인라인 스크립트보다는 먼저 실행되어야 하므로 순서는 유지. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="stl-core.js"></script>
+<script src="slides-core.js"></script>
 <script>
 (function () {
   var NS = 'http://www.w3.org/2000/svg';
@@ -345,16 +355,22 @@
         }},
         { label: '프로젝트', render: function (body) {
           body.innerHTML =
-            '<p style="margin:0 0 10px;">STL로 제작한 CAD 프로젝트입니다: <strong>WWII Japanese Dagger</strong>(2020, 단검 모델링), ' +
-            '<strong>Small City</strong>(아파트 10동·마트 3개·상가 3개·주차장 1개로 구성한 도시 매스 모델링) 등이 있습니다.</p>' +
-            '<a href="viewer.html" class="mm-link-btn">전체 뷰어에서 보기 →</a>';
+            '<div class="deck-card"></div>' +
+            '<p style="margin:0 0 10px;">프로젝트 발표자료입니다. PowerPoint에 지정된 전환 효과를 그대로 재현합니다.</p>' +
+            '<a href="slides.html" class="mm-link-btn">전체 화면으로 보기 →</a>';
+          mountSlideDeck(body.querySelector('.deck-card'), {
+            manifestUrl: 'slides/manifest.json',
+            imageBase: 'slides/images/',
+            dots: false,      // 좁은 카드에서는 점 네비게이션 생략
+            progress: true,
+            keyboard: false,  // 페이지 전체의 방향키를 가로채지 않도록
+            emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/ 폴더에 .pptx를 넣고 push하면 자동으로 변환되어 표시됩니다.'
+          });
         }}
       ]},
-      { label: '연락처', color: '#059669', children: [
-        { label: '이메일', render: function (body) {
-          body.innerHTML = '연락 가능한 이메일입니다.<br>' +
-            '<a href="mailto:yongsoo.b.lee@gmail.com" class="mm-inline-link">yongsoo.b.lee@gmail.com</a>';
-        }}
+      { label: '대외/개인활동', color: '#059669', children: [
+        { label: '대외활동', text: '대외활동 내용을 여기에 작성하세요.' },
+        { label: '개인활동', text: '개인활동 내용을 여기에 작성하세요.' }
       ]}
     ]
   };

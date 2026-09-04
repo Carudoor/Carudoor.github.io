@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이용수 — 발표자료</title>
+<meta name="description" content="PowerPoint 발표자료를 원본 전환 효과 그대로 볼 수 있는 슬라이드 뷰어.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23111216'/><rect x='7' y='9' width='18' height='12' rx='1.5' fill='%23c9a15a'/></svg>">
+<link rel="stylesheet" href="slides-core.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: #111216;
+    color: #f2f0ec;
+    overflow: hidden;
+  }
+  #deck {
+    width: 100%;
+    height: 100vh;
+  }
+  .back-link {
+    position: fixed;
+    top: 16px;
+    left: 18px;
+    z-index: 80;
+    font-size: 13px;
+    color: rgba(242, 240, 236, 0.55);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.25);
+  }
+  .back-link:hover { color: #c9a15a; }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← 포트폴리오로</a>
+<div id="deck"></div>
+
+<script src="slides-core.js"></script>
+<script>
+  mountSlideDeck(document.getElementById('deck'), {
+    manifestUrl: 'slides/manifest.json',
+    imageBase: 'slides/images/',
+    dots: true,
+    progress: true,
+    keyboard: true,
+    emptyText: '아직 등록된 발표자료가 없습니다. 저장소의 slides/ 폴더에 .pptx 파일을 추가하면 자동으로 변환되어 여기에 표시됩니다.'
+  });
+</script>
+
+</body>
+</html>

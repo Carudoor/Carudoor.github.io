@@ -1,0 +1,174 @@
+/* ---------------------------------------------------------------
+   PPTX 슬라이드 덱 스타일 — slides.html(전체 화면)과 홈페이지의
+   인라인 카드가 함께 쓴다. 높이/모서리 등 바깥 상자 속성은 host가
+   .deck 에 직접 지정한다 (여기서는 정하지 않음).
+   --------------------------------------------------------------- */
+.deck {
+  --deck-stage: #1a1c22;
+  --deck-paper: #f2f0ec;
+  --deck-accent: #c9a15a;
+  --deck-line: rgba(242, 240, 236, 0.14);
+  position: relative;
+  overflow: hidden;
+  background: var(--deck-stage);
+  color: var(--deck-paper);
+}
+
+.deck .deck-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(242, 240, 236, 0.5);
+  z-index: 70;
+}
+.deck .deck-status.hidden { display: none; }
+
+.deck .deck-progress {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--deck-line);
+  z-index: 50;
+}
+.deck .deck-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--deck-accent);
+  transition: width 0.5s cubic-bezier(.65, 0, .35, 1);
+}
+
+.deck .slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5% 5%;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  background: var(--deck-stage);
+}
+.deck .slide.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+}
+.deck .slide img {
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+}
+
+/* --enter-x / --enter-y / --exit-x / --exit-y / --dur 는 pptx에 실제로
+   저장된 전환 정보를 바탕으로 슬라이드마다 JS가 지정한다. */
+.deck .slide[data-effect="fade"] {
+  transition: opacity var(--dur, 600ms) ease;
+}
+.deck .slide[data-effect="push"] {
+  transition: transform var(--dur, 600ms) cubic-bezier(.65, 0, .35, 1),
+              opacity calc(var(--dur, 600ms) * 0.6) ease;
+  transform: translate(var(--enter-x, 100%), var(--enter-y, 0));
+}
+.deck .slide[data-effect="push"].active { transform: translate(0, 0); }
+.deck .slide[data-effect="push"].exit {
+  transform: translate(var(--exit-x, -100%), var(--exit-y, 0));
+}
+.deck .slide[data-effect="zoom"] {
+  transition: transform var(--dur, 600ms) cubic-bezier(.34, 1.56, .64, 1),
+              opacity calc(var(--dur, 600ms) * 0.7) ease;
+  transform: scale(.94);
+}
+.deck .slide[data-effect="zoom"].active { transform: scale(1); }
+.deck .slide[data-effect="cut"] { transition: none; }
+
+.deck .deck-dots {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 60;
+  max-height: 70%;
+  overflow-y: auto;
+}
+.deck .deck-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(242, 240, 236, 0.28);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background .3s, transform .3s;
+}
+.deck .deck-dot.active {
+  background: var(--deck-accent);
+  transform: scale(1.4);
+}
+
+.deck .deck-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--deck-line);
+  color: var(--deck-paper);
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s, border-color .2s;
+}
+.deck .deck-arrow:hover {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: var(--deck-accent);
+}
+.deck .deck-arrow:focus-visible {
+  outline: 2px solid var(--deck-accent);
+  outline-offset: 2px;
+}
+.deck .deck-arrow[hidden] { display: none; }
+.deck .deck-prev { left: 14px; }
+.deck .deck-next { right: 14px; }
+.deck.has-dots .deck-next { right: 42px; }
+
+.deck .deck-count {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  z-index: 60;
+  font-size: 0.75rem;
+  letter-spacing: .03em;
+  color: rgba(242, 240, 236, 0.5);
+}
+.deck .deck-count b {
+  color: var(--deck-accent);
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .deck .deck-arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck .slide,
+  .deck .deck-progress-fill {
+    transition: opacity .01s linear !important;
+    transform: none !important;
+  }
+}

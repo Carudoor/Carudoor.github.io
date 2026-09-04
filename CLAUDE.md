@@ -129,6 +129,20 @@ slides/*.pptx 또는 *.pdf push
   같은 이름의 pptx와 pdf가 함께 있어도 이미지가 덮어써지지 않게 하기 위함이며,
   **워크플로우와 `extract_transitions.py`가 이 규칙을 공유**하므로 한쪽만 바꾸면 깨진다.
 
+- **GitHub은 파일당 100MB가 하드 리밋**이라, 그보다 큰 원본은 저장소에 못 넣는다.
+  그런 덱은 **로컬에서 PNG로 변환해 이미지만** 커밋한다:
+  - 이미지: `slides/images/<이름>_manual-N.png`
+  - 매니페스트 항목: `slides/manual.json` (빌드 시 자동 생성분 뒤에 병합됨)
+  - 워크플로우는 이미지를 통째로 지우지 않고 **이번에 다시 만들 접두어만** 지우므로
+    `_manual` 이미지는 살아남는다. 이 규칙을 깨면 수동 덱이 조용히 사라진다.
+  - 실제 사례: `buipji-mid_manual-*.png` 43장. 원본 pptx가 178.8MB라 이 PC의
+    PowerShell + PowerPoint COM(`Presentation.Export`)으로 1600×900 PNG로 변환(21.8MB).
+    원본에 전환 효과가 없어서 전부 기본 Fade.
+  - 참고: 이 PC에는 LibreOffice·poppler가 없다. **PowerPoint COM은 쓸 수 있지만
+    PDF→이미지 변환 수단은 없다.** PDF는 Actions(poppler)로 변환하거나 원본을 줄여야 한다.
+  - COM에 한글 경로/파일명을 인라인으로 넘기면 인코딩이 깨져 `FileNotFoundException`이
+    난다. ASCII 경로로 복사한 뒤 다루면 문제없다.
+
 - **원본 패키지는 Pages를 `/docs`에서 서빙하는 전제였지만, 이 저장소는 루트에서
   서빙한다.** 그래서 경로를 `docs/` → `slides/`로 전부 바꿔서 통합했다.
   **Pages 소스를 `/docs`로 바꾸면 기존 홈페이지가 통째로 죽는다 — 절대 바꾸지 말 것.**
@@ -187,7 +201,7 @@ cd "C:\Users\yslee\OneDrive\바탕 화면\프로젝트\포트폴리오"
 - `stl/teil_1~4.stl`, `stl/innen.stl`이 **실제로 무슨 프로젝트인지 정보 없음.**
 - 학력사항에 재학/졸업 연도가 비어 있음 (사용자가 알려주지 않아 임의로 채우지 않음).
 - **대외활동·개인활동 본문이 플레이스홀더** 상태 — 실제 내용 필요.
-- **`slides/`에 아직 발표자료(.pptx/.pdf)가 하나도 없음.** 그래서 슬라이드 뷰어는 "아직 등록된
+- `slides/`에 pptx/pdf **원본은 없다**(수동 변환 덱만 있음). 그래서 **GitHub Actions 워크플로우는 아직 한 번도 실행된 적이 없다** — 첫 원본을 push할 때 Actions 탭에서 동작 확인 필요. (이전 메모: "아직 등록된
   발표자료가 없습니다" 안내만 표시됨. pptx를 처음 push할 때 GitHub Actions 워크플로우가
   정상 동작하는지(Actions 탭) 확인이 필요하다 — 아직 한 번도 실행된 적 없음.
 - 마인드맵에서 **이메일(연락처)이 사라진 상태** — 연락처 브랜치를 대외/개인활동으로

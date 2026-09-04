@@ -55,3 +55,33 @@ pptx 기준:
   (PDF는 폰트가 파일에 embed되어 있는 경우가 많아 이 문제가 적습니다.)
 - 오브젝트 단위 애니메이션(슬라이드 "내부" 효과)은 다루지 않습니다.
   여기서 재현하는 건 슬라이드 "전환" 효과입니다.
+
+## 원본이 너무 클 때 (100MB 초과)
+
+GitHub은 **파일당 100MB가 하드 리밋**이라 그보다 큰 pptx/pdf는 push 자체가
+거부됩니다. 이럴 때는 원본을 저장소에 넣지 않고 **미리 PNG로 변환해서 이미지만**
+커밋합니다.
+
+1. 로컬에서 슬라이드를 PNG로 내보냅니다.
+   (Windows + PowerPoint가 있으면 COM 자동화로 가능 — `Presentation.Export`)
+2. `slides/images/` 에 `<이름>_manual-<번호>.png` 형태로 넣습니다.
+   접두어에 `_manual`을 쓰는 이유는, 워크플로우가 이미지를 정리할 때
+   `_pptx`/`_pdf` 접두어만 지우기 때문에 **수동 이미지가 살아남기 때문**입니다.
+3. `slides/manual.json` 에 매니페스트 항목을 그대로 적습니다.
+   ```json
+   [
+     { "file": "deck_manual-1.png", "effect": "fade", "direction": null, "reverse": false, "duration": 600 }
+   ]
+   ```
+4. `scripts/extract_transitions.py` 가 빌드할 때 이 항목들을 자동 생성분 뒤에
+   이어붙이므로, 나중에 다른 pptx를 추가해도 수동 덱이 사라지지 않습니다.
+
+> 수동 변환한 덱은 원본 pptx가 저장소에 없으므로 **전환 효과를 자동으로
+> 읽어올 수 없습니다.** 기본값(Fade)이 적용되며, 필요하면 `manual.json`의
+> `effect`/`direction`/`duration`을 직접 수정하면 됩니다.
+
+### 현재 들어있는 수동 변환 덱
+
+- `buipji-mid_manual-*.png` — "부입지 중간범위 (1차)" 43장.
+  원본 pptx가 178.8MB(100MB 초과)라 로컬 PowerPoint로 1600×900 PNG로 변환해
+  넣었습니다(21.8MB). 원본에 전환 효과가 지정돼 있지 않아 전부 기본 Fade입니다.

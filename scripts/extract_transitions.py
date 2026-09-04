@@ -83,6 +83,22 @@ def image_prefix(source_path):
     return f"{stem}_{ext.lstrip('.').lower()}"
 
 
+def load_manual_entries():
+    """원본이 너무 커서(GitHub 100MB 제한) 로컬에서 미리 PNG로 변환해 넣어둔 덱.
+
+    slides/manual.json 에 매니페스트 항목을 그대로 적어두면 여기서 읽어
+    생성된 항목 뒤에 붙인다. 이미지는 slides/images/ 안에 *_manual-N.png
+    형태로 함께 들어 있고, 워크플로우는 그 접두어를 지우지 않는다.
+    """
+    path = "slides/manual.json"
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        entries = json.load(f)
+    print(f"{path}: {len(entries)} manual slides")
+    return entries
+
+
 def main():
     manifest = []
     sources = sorted(glob.glob("slides/*.pptx") + glob.glob("slides/*.pdf"))
@@ -103,10 +119,12 @@ def main():
 
         print(f"{source_path}: {len(images)} slides")
 
-    with open("slides/manifest.json", "w") as f:
-        json.dump(manifest, f, indent=2)
+    manifest.extend(load_manual_entries())
 
-    print(f"Wrote manifest.json with {len(manifest)} slides from {len(sources)} file(s)")
+    with open("slides/manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+    print(f"Wrote manifest.json with {len(manifest)} slides from {len(sources)} source file(s)")
 
 
 if __name__ == "__main__":
